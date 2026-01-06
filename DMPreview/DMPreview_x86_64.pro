@@ -53,7 +53,7 @@ QMAKE_LFLAGS += '-Wl,--trace,-rpath,\'\$$ORIGIN/../eSPDI\''
 
 QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-parameter
 QMAKE_CXXFLAGS_WARN_ON += -Wno-reorder
-QMAKE_CXXFLAGS += -ffast-math
+QMAKE_CXXFLAGS += -ffast-math -fno-finite-math-only
 FORMS += \
     view/mainwindow.ui \
     view/CVideoDeviceDialog.ui \
@@ -65,6 +65,7 @@ FORMS += \
     view/CVideoDeviceDepthAccuracyWidget.ui \
     view/CVideoDeviceDepthFilterWidget.ui \
     view/CSelfCalibrationWidget.ui \
+    view/CSelfCalibration2Widget.ui \
     view/CSparseModeWidget.ui
 
 
@@ -77,6 +78,7 @@ HEADERS += \
     controller/CDepthFilterController.h \
     controller/CImageProcessController.h \
     controller/CSelfcalibrationController.h \
+    controller/CSelfCalibration2Controller.h \
     controller/CSparseModeController.h \
     manager/CEYSDDeviceManager.h \
     manager/CThreadWorkerManage.h \
@@ -118,6 +120,7 @@ HEADERS += \
     model/module/CVideoDeviceModel_Kolor.h \
     model/module/CVideoDeviceModel_Hypatia.h \
     model/module/CVideoDeviceModel_Hypatia2.h \
+    model/module/CVideoDeviceModel_Hypatia4.h \
     model/module/CVideoDeviceModel_Nora.h \
     model/module/CVideoDeviceModel_Grap.h \
     model/module/CVideoDeviceModel_Iris.h \
@@ -148,6 +151,7 @@ HEADERS += \
     utility/IMU/IMU_Filter/Quaternion1.h \
     utility/IMU/IMU_Calibration/CIMUCalibration.h \
     utility/ModuleCalibParWrite/ModuleCalibParWrite.h \
+    view/CSelfCalibration2Widget.h \
     view/mainwindow.h \
     view/CVideoDeviceDialog.h \
     view/CVideoDevicePreviewWidget.h \
@@ -179,6 +183,7 @@ SOURCES += \
     controller/CDepthFilterController.cpp \
     controller/CImageProcessController.cpp \
     controller/CSelfcalibrationController.cpp \
+    controller/CSelfCalibration2Controller.cpp \
     controller/CSparseModeController.cpp \
     manager/CEYSDDeviceManager.cpp \
     manager/CThreadWorkerManage.cpp \
@@ -220,6 +225,7 @@ SOURCES += \
     model/module/CVideoDeviceModel_Kolor.cpp \
     model/module/CVideoDeviceModel_Hypatia.cpp \
     model/module/CVideoDeviceModel_Hypatia2.cpp \
+    model/module/CVideoDeviceModel_Hypatia4.cpp \
     model/module/CVideoDeviceModel_Nora.cpp \
     model/module/CVideoDeviceModel_Grap.cpp \
     model/module/CVideoDeviceModel_Iris.cpp \
@@ -263,6 +269,7 @@ SOURCES += \
     view/CIMUDataViewerWidget.cpp \
     view/CVideoDeviceDepthFilterWidget.cpp \
     view/CSelfCalibrationWidget.cpp \
+    view/CSelfCalibration2Widget.cpp \
     view/CSparseModeWidget.cpp \
     model/module/CVideoDeviceModel_IVY4.cpp
 

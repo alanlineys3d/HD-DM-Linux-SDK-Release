@@ -17,6 +17,7 @@
 #include "CVideoDeviceDepthFilterWidget.h"
 #include "CFrameSyncManager.h"
 #include "CSelfCalibrationWidget.h"
+#include "CSelfCalibration2Widget.h"
 #include "CSparseModeWidget.h"
 
 
@@ -34,6 +35,7 @@ CVideoDeviceDialog::CVideoDeviceDialog(CVideoDeviceModel *pVideoDeviceModel, QWi
     m_pDepthFilterWidget(nullptr),
     m_pPointCloudViewerDialog(nullptr),
     m_pSelfCalibrationWidget(nullptr),
+    m_pSelfCalibration2Widget(nullptr),
     m_pSparseModeWidget(nullptr)
 {
     setAttribute(Qt::WA_DeleteOnClose);
@@ -338,6 +340,7 @@ void CVideoDeviceDialog::UpdateTabView()
     UpdateDepthFilter();
     UpdateCameraProperty();
     UpdateSelfCalibration();
+    UpdateSelfCalibration2();
     UpdateSparseMode();
     UpdateDepthAccuracy();
     UpdateIMU();
@@ -429,6 +432,12 @@ void CVideoDeviceDialog::UpdateSelfCalibration()
         m_pSelfCalibrationWidget = new CSelfCalibrationWidget(m_pVideoDeviceController, this);
         ui->tabWidget->addTab(m_pSelfCalibrationWidget, "SelfCalibration");
     }
+}
+
+void CVideoDeviceDialog::UpdateSelfCalibration2() {
+    if (m_pSelfCalibration2Widget) delete m_pSelfCalibration2Widget;
+    m_pSelfCalibration2Widget = new CSelfCalibration2Widget(m_pVideoDeviceController, this);
+    ui->tabWidget->addTab(m_pSelfCalibration2Widget, "SelfCalibration2");
 }
 
 void CVideoDeviceDialog::UpdateSparseMode()

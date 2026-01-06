@@ -1000,10 +1000,14 @@ int CVideoDeviceModel::GetRectifyLogData(int nDevIndex, int nRectifyLogIndex, eS
             nRectifyLogIndex = 3;
         }
     }
+
+    mCurrentRectifyFileIndex = nRectifyLogIndex;
     RETRY_APC_API(ret, APC_GetRectifyMatLogData(CEYSDDeviceManager::GetInstance()->GetEYSD(),
                                                       m_deviceSelInfo[nDevIndex],
                                                       pRectifyLogData,
                                                       nRectifyLogIndex));
+
+    GetVideoDeviceController()->GetSelfCalibration2Controller()->UpdateRectifyLogData(m_rectifyLogData);
 
     if (DEBUG_RECTIFY_LOG) {
         fprintf(stderr, "rectify main CamMat2 %f %f %f %f %f %f %f %f %f \n",
@@ -2017,23 +2021,8 @@ int CVideoDeviceModel::UpdateFrameGrabberColorData(STREAM_TYPE streamType)
     if (bIsDpethOutput) {
         m_bIsNeedCropLeftImage = false;
         CImageDataModel *pDepthImageData = GetPreivewImageDataModel(STREAM_DEPTH);
-        if (pDepthImageData &&
-            pDepthImageData->GetWidth() > 0 && pDepthImageData->GetHeight() > 0) {
-            if ((pDepthImageData->GetWidth() == pColorImageData->GetWidth() &&
-                 pDepthImageData->GetHeight() == pColorImageData->GetHeight()) || GetIsConcatenatedColorImage()) {
-                pBuffer = &pDepthImageData->GetRGBData()[0];
-            } else {
-                if (m_imageData[STREAM_RESERVED].imageBuffer.size() != pColorImageData->GetWidth() * pColorImageData->GetHeight() * 3) {
-                    m_imageData[STREAM_RESERVED].imageBuffer.resize(pColorImageData->GetWidth() * pColorImageData->GetHeight() * 3);
-                    m_imageData[STREAM_RESERVED].processedBuffer.resize(pColorImageData->GetWidth() * pColorImageData->GetHeight() * 3);
-                }
-
-                PlyWriter::resampleImage(pDepthImageData->GetWidth(), pDepthImageData->GetHeight(), &pDepthImageData->GetRGBData()[0],
-                                         pColorImageData->GetWidth(), pColorImageData->GetHeight(), &m_imageData[STREAM_RESERVED].imageBuffer[0],
-                                         nBytesPerPixelColor);
-                pBuffer = &m_imageData[STREAM_RESERVED].imageBuffer[0];
-            }
-
+        if (pDepthImageData && pDepthImageData->GetWidth() > 0 && pDepthImageData->GetHeight() > 0) {
+            pBuffer = &pDepthImageData->GetRGBData()[0];
             m_pFrameGrabber->SetFrameFormat(FrameGrabber::FRAME_POOL_INDEX_COLOR,
                                             pDepthImageData->GetWidth(), pDepthImageData->GetHeight(),
                                             nBytesPerPixelColor);
@@ -2579,5 +2568,19 @@ int CVideoDeviceModel::GetInterleaveMode(bool *pEnable)
                                                    pEnable));
 
     return ret;
+}
+
+/**
+ * Currently firmware protected modules had file table index offset 5, otherwise it's 0.
+ * @return Index of the user modifiable table index.
+ */
+int CVideoDeviceModel::GetCurrentStreamingVideoModeFileIndex() const {
+    int ret = APC_Init_Fail;
+    constexpr uint16_t kFirmwareDataFlag = FG_Address_1Byte | FG_Value_1Byte;
+    uint16_t value = 0x0;
+    RETRY_APC_API(ret, APC_GetFWRegister(CEYSDDeviceManager::GetInstance()->GetEYSD(),
+                                         m_deviceSelInfo[0],
+                                         0xF6, &value, kFirmwareDataFlag));
+    return mCurrentRectifyFileIndex + value;
 }
 

@@ -789,6 +789,9 @@ int RegisterSettings::DM_Quality_Register_Setting(void* hEYSD, PDEVSELINFO pDevS
     case APC_PID_8063:
         modelName = "YX8063";
         break;
+    case APC_PID_8072:
+        modelName = "YX8072";
+        break;
     case APC_PID_8076:
         modelName = "YX8076";
         break;

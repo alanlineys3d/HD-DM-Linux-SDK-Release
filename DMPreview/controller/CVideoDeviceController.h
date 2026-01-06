@@ -12,11 +12,13 @@
 #include "DepthFilterOptions.h"
 #include "CImageProcessController.h"
 #include "CSelfcalibrationController.h"
+#include "CSelfCalibration2Controller.h"
 #include "CSparseModeController.h"
 
 class CImageProcessController;
 class CDepthAccuracyController;
 class CSelfcalibrationController;
+class CSelfCalibration2Controller;
 class CSparseModeController;
 class CVideoDeviceController
 {
@@ -37,6 +39,7 @@ public:
     std::shared_ptr<CImageProcessController> GetImageProcessController() { return m_pImageProcessController; }
     DepthFilterOptions *GetDepthFilterOptions(){ return m_pDepthFilterOptions; }
     CSelfcalibrationController *GetSelfcalibrationController(){ return m_pSelfcalibrationController; }
+    CSelfCalibration2Controller *GetSelfCalibration2Controller(){ return m_pSelfCalibration2Controller; }
     CSparseModeController *GetSparseModeController(){ return m_pSparseModeController; }
 
 
@@ -113,6 +116,7 @@ private:
     DepthFilterOptions *m_pDepthFilterOptions;
     CSelfcalibrationController *m_pSelfcalibrationController;
     CSparseModeController *m_pSparseModeController;
+    CSelfCalibration2Controller *m_pSelfCalibration2Controller;
 
 };
 

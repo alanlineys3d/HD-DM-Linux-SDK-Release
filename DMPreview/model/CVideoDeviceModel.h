@@ -376,6 +376,11 @@ public:
                                           std::vector<unsigned char>& bufColor, int &widthColor, int &heightColor,
                                           int &serialNumber){ return APC_OK; }
     virtual int DefaultVideoMode() { return 0; }
+    /**
+     * Read the file index during start streaming, and will not reset after stop streaming.
+     * @return File index of eYs3D module, which indicates where we get the calibration table or ZD lookup Table.
+     */
+    int GetCurrentStreamingVideoModeFileIndex() const;
 protected:
 
     STATE m_state;
@@ -424,6 +429,7 @@ protected:
 
     SERIAL_NUMBER_TYPE m_serialNumberType;
     bool m_auto_reconnet;
+    int mCurrentRectifyFileIndex;
 };
 
 #endif // CVIDEODEVICEMODEL_H

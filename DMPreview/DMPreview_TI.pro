@@ -39,7 +39,7 @@ QMAKE_LFLAGS += '-Wl,-rpath,\'\$$ORIGIN/../eSPDI\''
 
 QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-parameter
 QMAKE_CXXFLAGS_WARN_ON += -Wno-reorder
-QMAKE_CXXFLAGS += -ffast-math
+QMAKE_CXXFLAGS += -ffast-math -fno-finite-math-only
 
 FORMS += \
     view/mainwindow.ui \
@@ -51,6 +51,7 @@ FORMS += \
     view/CVideoDeviceAudioWidget.ui \
     view/CVideoDeviceDepthAccuracyWidget.ui \
     view/CVideoDeviceDepthFilterWidget.ui
+    view/CSelfCalibration2Widget.ui
 
 HEADERS += \
     controller/CVideoDeviceController.h \
@@ -60,6 +61,7 @@ HEADERS += \
     controller/CDepthAccuracyController.h \
     controller/CDepthFilterController.h \
     controller/CImageProcessController.h \
+    controller/CSelfCalibration2Controller.h \
     manager/CEYSDDeviceManager.h \
     manager/CThreadWorkerManage.h \
     manager/CTaskThread.h \
@@ -100,6 +102,7 @@ HEADERS += \
     model/module/CVideoDeviceModel_Iris.h \
     model/module/CVideoDeviceModel_Hypatia.h \
     model/module/CVideoDeviceModel_Hypatia2.h \
+    model/module/CVideoDeviceModel_Hypatia4.h \
     model/module/CVideoDeviceModel_Nora.h \
     model/module/CVideoDeviceModel_Grap.h \
     utility/PlyWriter.h \
@@ -140,6 +143,7 @@ HEADERS += \
     view/CVideoDeviceAudoWidget.h \
     view/CPointCloudViewerWidget.h \
     view/CPointCloudViewerDialog.h \
+    view/CSelfCalibration2Widget.h \
     view/CVideoDeviceDepthAccuracyWidget.h \
     view/CIMUDataViewerWidget.h \
     view/CVideoDeviceDepthFilterWidget.h
@@ -153,6 +157,7 @@ SOURCES += \
     controller/CDepthAccuracyController.cpp \
     controller/CDepthFilterController.cpp \
     controller/CImageProcessController.cpp \
+    controller/CSelfCalibration2Controller.cpp \
     manager/CEYSDDeviceManager.cpp \
     manager/CThreadWorkerManage.cpp \
     manager/CTaskThread.cpp \
@@ -193,6 +198,7 @@ SOURCES += \
     model/module/CVideoDeviceModel_Iris.cpp \
     model/module/CVideoDeviceModel_Hypatia.cpp \
     model/module/CVideoDeviceModel_Hypatia2.cpp \
+    model/module/CVideoDeviceModel_Hypatia4.cpp \
     model/module/CVideoDeviceModel_Nora.cpp \
     model/module/CVideoDeviceModel_Grap.cpp \
     utility/PlyWriter.cpp \
@@ -229,6 +235,7 @@ SOURCES += \
     view/CVideoDeviceAudoWidget.cpp \
     view/CPointCloudViewerWidget.cpp \
     view/CPointCloudViewerDialog.cpp \
+    view/CSelfCalibration2Widget.cpp \
     view/CVideoDeviceDepthAccuracyWidget.cpp \
     view/CIMUDataViewerWidget.cpp \
     view/CVideoDeviceDepthFilterWidget.cpp

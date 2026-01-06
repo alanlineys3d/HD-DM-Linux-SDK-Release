@@ -312,6 +312,7 @@ typedef struct tagDEVINFORMATION {
 #define APC_PID_8062            0x0162
 #define APC_PID_8063            0x0164
 #define APC_PID_8063_K          0x0165
+#define APC_PID_8072            0x0180
 #define APC_PID_8076            0x0181
 #define APC_PID_80362           APC_PID_8076
 #define APC_PID_8077            0x0182

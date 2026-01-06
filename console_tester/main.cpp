@@ -16,10 +16,10 @@
 #include <glob.h>
 #include <fstream>
 #include <cstdio>
-
+#include <byteswap.h>
 #include "PlyWriter.h"
 #include "eSPDI.h"
-
+#include "selfK2.h"
 #include "ColorPaletteGenerator.h"
 #include "RegisterSettings.h"
 #include "hidapi.h"
@@ -27,6 +27,7 @@
 #include "json/nlohmann/json.hpp"
 #include "meta/MetaDataPayloadParser.h"
 #include "meta/JsonFileSerializer.h"
+#include "CSelfCalibration2Controller.h"
 
 #define CT_DEBUG_CT_DEBUG(format, ...) \
     printf("[CT][%s][%d]" format, __func__, __LINE__, ##__VA_ARGS__)
@@ -755,6 +756,7 @@ int main(void)
         printf("     Put write.bin file into calibrationdata/write folder\n");
         printf("105. General Streaming Loop Test.\n");
         printf("106. Profile YUY2 decode Loop Test.\n");
+        printf("107. Self-Calibration 2 method test.\n");
         printf("255. EXIT)\n");
         scanf("%d", &input);
         switch (input) {
@@ -2988,6 +2990,138 @@ int main(void)
             APC_Release(&cameraHandle);
             break;
         }
+        case 107: {
+            void* cameraHandle = nullptr;
+            DEVSELINFO devSelInfo;
+            devSelInfo.index = 0;
+            auto rectifyLogIndex = 0;
+            eSPCtrl_RectLogData rectifyLogData {};
+            int dw = 1280;
+            int dh = 720;
+            int fps = 30;
+            unsigned short depthDataType = 0x4;
+            float temperatureThresholdMultiplier = 1.6f;
+            printf("Depth width:\n");
+            scanf("%d", &dw);
+            printf("Depth height:\n");
+            scanf("%d", &dh);
+            printf("FPS:\n");
+            scanf("%d", &fps);
+            printf("Rectify Log Index (Please refer to the PIF document!\n");
+            scanf("%d", &rectifyLogIndex);
+            printf("Temperature threshold multiplier:\n");
+            scanf("%f", &temperatureThresholdMultiplier);
+
+            int ret = APC_Init(&cameraHandle, true);
+
+            CSelfCalibration2Controller controller(cameraHandle, &devSelInfo, dw, dh);
+
+            if (!cameraHandle) {
+                printf("Null handle reason %d\n", ret);
+                return 0;
+            }
+
+            DEVINFORMATION info {};
+            ret = APC_GetDeviceInfo(cameraHandle, &devSelInfo, &info);
+
+            ret = APC_GetRectifyMatLogData(cameraHandle, &devSelInfo, &rectifyLogData, rectifyLogIndex);
+            controller.UpdateRectifyLogData(rectifyLogData);
+            auto calibrateStoredTemperature = rectifyLogData.LR_cam_K_temperature[0];
+
+            /**
+             * Be aware that you have left away the IR emitter !! This sample uses higher intensity of infra red light.
+             */
+            auto specialIRIntensityModule = APC_PID_8081;
+            auto maxIRIntensity = info.wPID == specialIRIntensityModule ? 96 : 15;
+            ret = APC_SetIRMaxValue(cameraHandle, &devSelInfo, maxIRIntensity);
+            ret = APC_SetCurrentIRValue(cameraHandle, &devSelInfo, maxIRIntensity);
+
+            ret = APC_SetDepthDataType(cameraHandle, &devSelInfo, depthDataType);
+
+            ret = APC_SetupBlock(cameraHandle, &devSelInfo, true);
+
+            ret = APC_OpenDevice2(cameraHandle, &devSelInfo, 0, 0, false, dw, dh, DEPTH_IMG_NON_TRANSFER, false,
+                                  nullptr, &fps);
+
+            if (ret) {
+                printf("Open device failed \n");
+                return 0;
+            }
+
+            /**
+             * Assume the sensor temperature is monotonic increasing, and the scene under test is stable.
+             * 0. Save 1 frame.
+             * 1. Streaming till the current sensor temperature is 1.6 times higher than the one stored in the module.
+             * 2. Start to save frames, then enable self-calibration process.
+             * 3. Wait 30 seconds for fill rate convergence.
+             */
+            bool isCalibrationWatchDogWakeup = false;
+            bool shouldWaitTheTemperatureGoesUp = true;
+            float targetTemperature = temperatureThresholdMultiplier * calibrateStoredTemperature;
+            libeys3dsample::FrameCallbackHelper::Callback depthCallbackFn([&] (const libeys3dsample::Frame *f) {
+                if (!controller.IsRunning()) {
+                    std::string startFrameFileName = SAVE_FILE_PATH;
+                    startFrameFileName.append("start_frame");
+                    saveRawFile(startFrameFileName.c_str(), (unsigned char*) f->dataVec.data(), f->dataVec.size());
+                    controller.RunSelfK2();
+                    controller.SwapDepthImage(f->dataVec);
+                    controller.SetCompensatorWorking(false);
+                    printf("RunSelfK2 Start Running But Not Do Calibration++++\n");
+                    return f->status;
+                }
+
+                auto sensorTemperature = controller.GetCurrentSensorTemperature();
+                std::string fileName = SAVE_FILE_PATH;
+                if (sensorTemperature > targetTemperature || controller.GetCompensatorWorking()) {
+                    if (!controller.GetCompensatorWorking()) {
+                        shouldWaitTheTemperatureGoesUp = false;
+                        isCalibrationWatchDogWakeup = true;
+                        controller.SetCompensatorWorking(true);
+                        printf("RunSelfK2 Start Running Calibration*\n");
+                        std::string highTempFileName = SAVE_FILE_PATH;
+                        highTempFileName.append("high_temp_frame");
+                        saveRawFile(highTempFileName.c_str(), (unsigned char*) f->dataVec.data(), f->dataVec.size());
+                        return f->status;
+                    }
+
+                    controller.SwapDepthImage(f->dataVec);
+                    fileName.append(std::to_string(f->sn));
+                    fileName.append("_");
+                    fileName.append(std::to_string((int)sensorTemperature));
+                    fileName.append("_");
+                    fileName.append("calibrating");
+
+                    saveRawFile(fileName.c_str(), (unsigned char*) f->dataVec.data(), f->dataVec.size());
+                    printf("Save %s\n", fileName.c_str());
+                }
+
+                return f->status;
+            });
+
+            libeys3dsample::DepthCallbackHelper depthCallback(cameraHandle, devSelInfo, dw, dh, 2, depthCallbackFn);
+
+            depthCallback.start();
+
+            while (shouldWaitTheTemperatureGoesUp) {
+                printf("Wait temperature %f goes up to reach %f !!\n",
+                        controller.GetCurrentSensorTemperature(), targetTemperature);
+                std::this_thread::sleep_for(std::chrono::seconds(3));
+            }
+
+            while (isCalibrationWatchDogWakeup) {
+                printf("Wait calibration finish!!\n");
+                std::this_thread::sleep_for(std::chrono::seconds(30));
+                isCalibrationWatchDogWakeup = false;
+            }
+
+            controller.StopSelfK2();
+            depthCallback.stop();
+
+            ret = APC_CloseDevice(cameraHandle, &devSelInfo);
+
+            APC_Release(&cameraHandle);
+            break;
+        }
         case 255:
             close_device();
             release_device();
@@ -4590,6 +4724,41 @@ static int open_device(void)
     if (APC_OK != ret) {
         CT_DEBUG("Update ZDtable Fail! (%d)\n", ret);
     }
+    PointCloudInfo pointCloudInfo = {0};
+    if ((gCameraPID == APC_PID_HYPATIA2 || gCameraPID == APC_PID_8072) &&
+        APCImageType::IsDepthDataTypeDisparity(gDepthDataType)) {
+
+        ret = getPointCloudInfo(EYSD, &gsDevSelInfo, &pointCloudInfo, gDepthDataType, gDepthHeight);
+        CT_DEBUG("Override ZDtable 0. Read Cloud Information (ret=%d)\n", ret);
+
+        g_pzdTable[0] = 0;
+        g_pzdTable[1] = 0;
+
+        int disparity_len = pointCloudInfo.disparity_len;
+        float focalLength = pointCloudInfo.focalLength;
+
+        if (disparity_len > 0 && APCImageType::DEPTH_11BITS == APCImageType::DepthDataTypeToDepthImageType(
+                gDepthDataType)) {
+            std::vector<float> dToW(disparity_len);
+            memcpy(&dToW[0], pointCloudInfo.disparityToW, disparity_len * sizeof(float));
+
+            for (int j = 0; j < disparity_len; j++) {
+                ((WORD*) g_pzdTable)[j] = bswap_16((WORD) (focalLength / dToW[j]));
+
+                unsigned short nZValue = (((unsigned short) g_pzdTable[j * 2]) << 8) + g_pzdTable[j * 2 + 1];
+
+                if (nZValue) {
+                    g_maxNear = std::min<unsigned short>(g_maxNear, nZValue);
+                    g_maxFar = std::max<unsigned short>(g_maxFar, nZValue);
+                }
+            }
+            if (g_maxNear > g_maxFar)
+                g_maxNear = g_maxFar;
+
+            if (g_maxFar > 1000)
+                g_maxFar = 1000;
+        }
+    }
     ColorPaletteGenerator::DmColorMode14(g_ColorPaletteZ14, (int) g_maxFar, (int)g_maxNear);
     ColorPaletteGenerator::DmGrayMode14(g_GrayPaletteZ14, (int) g_maxFar, (int)g_maxNear);
     //e:[eys3D] 20200615 implement ZD table
@@ -6056,6 +6225,7 @@ static void Read24X(void)
     {
         for (index = 0; index <= 5; index++)
         {
+
             if (APC_OK == APC_GetLogData(EYSD, GetDevSelectIndexPtr(), data, nbfferLength, &pActualLength, index, ALL_LOG))
             {
                 printf("\n Read24%d ALL_LOG\n", index);
@@ -6779,16 +6949,24 @@ void UpdateD11DisplayImage_DIB24(const RGBQUAD* pColorPalette, const unsigned ch
     BYTE* pD     = NULL;
     const RGBQUAD* pClr = NULL;
     unsigned short z = 0;
-
+    unsigned depthValueLimit11Bit = ((1 << 12) - 1);
     for (int y = 0; y < height; y++) {
         pD = pDL;
         for (int x = 0; x < width; x++) {
             int pixelIndex = y * width + x;
             unsigned short depth = pDepth[pixelIndex * sizeof(unsigned short) + 1] << 8 |  pDepth[pixelIndex * sizeof(unsigned short)];
+            //++ avoid afterimage on outdoor confirm again
+            if (depth > depthValueLimit11Bit) {
+                depth = depthValueLimit11Bit;
+            }
+            //-- avoid afterimage on outdoor
             unsigned short zdIndex = depth * sizeof(unsigned short);
             z = (((unsigned short)g_pzdTable[zdIndex]) << 8) + g_pzdTable[zdIndex + 1];
-            //CT_DEBUG("depth: %d, z value: %d\n",depth,z);
-            if ( z >= COLOR_PALETTE_MAX_COUNT) continue;
+            //++ avoid afterimage on outdoor confirm again
+            if ( z >= COLOR_PALETTE_MAX_COUNT) {
+                z = COLOR_PALETTE_MAX_COUNT-1;
+            }
+            //-- avoid afterimage on outdoor
             pClr = &(pColorPalette[z]);
             pD[0] = pClr->rgbRed;
             pD[1] = pClr->rgbGreen;
@@ -6799,30 +6977,34 @@ void UpdateD11DisplayImage_DIB24(const RGBQUAD* pColorPalette, const unsigned ch
     }
 }
 
-void UpdateZ14DisplayImage_DIB24(RGBQUAD *pColorPaletteZ14, unsigned char *pDepthZ14, unsigned char *pDepthDIB24, int cx, int cy)
+void UpdateZ14DisplayImage_DIB24(RGBQUAD *pColorPaletteZ14, unsigned char *pDepthZ14, unsigned char *pDepthDIB24, int width, int height)
 {
     int x,y,nBPS;
     unsigned short *pWSL,*pWS;
     unsigned char *pDL,*pD;
     RGBQUAD *pClr;
     //
-    if ((cx <= 0) || (cy <= 0)) return;
+    if ((width <= 0) || (height <= 0)) return;
     //
-    nBPS = cx * 3;
+    nBPS = width * 3;
     pWSL = (unsigned short *)pDepthZ14;
     pDL = pDepthDIB24;
-    for (y=0; y<cy; y++) {
+    for (y=0; y<height; y++) {
         pWS = pWSL;
         pD = pDL;
-        for (x=0; x<cx; x++) {
-            if ( pWS[x] >= COLOR_PALETTE_MAX_COUNT) continue;
+        for (x=0; x<width; x++) {
+            //++ avoid afterimage on outdoor
+            if ( pWS[x] >= COLOR_PALETTE_MAX_COUNT) {
+                pWS[x] = COLOR_PALETTE_MAX_COUNT-1;
+            }
+            //-- avoid afterimage on outdoor
             pClr = &(pColorPaletteZ14[pWS[x]]);
             pD[0] = pClr->rgbRed;
             pD[1] = pClr->rgbGreen;
             pD[2] = pClr->rgbBlue;
             pD += 3;
         }
-        pWSL += cx;
+        pWSL += width;
         pDL += nBPS;
     }
 }
@@ -6961,6 +7143,7 @@ static int TransformDepthDataType(int *nDepthDataType, bool bRectifyData)
         *nDepthDataType += APC_DEPTH_DATA_SCALE_DOWN_MODE_OFFSET;
     }
 
+    //Donkey
     if ((gCameraPID == APC_PID_8036) && (gDepthWidth == 320 && gDepthHeight == 180)) {
         *nDepthDataType += APC_DEPTH_DATA_SCALE_DOWN_MODE_OFFSET;
         if (!IsInterleaveMode()) {
@@ -6968,6 +7151,7 @@ static int TransformDepthDataType(int *nDepthDataType, bool bRectifyData)
         }
     }
 
+    //Donkey
     if ((gCameraPID == APC_PID_80362) && (gDepthWidth == 320 && gDepthHeight == 180)) {
         *nDepthDataType += APC_DEPTH_DATA_SCALE_DOWN_MODE_OFFSET;
         if (!IsInterleaveMode()) {

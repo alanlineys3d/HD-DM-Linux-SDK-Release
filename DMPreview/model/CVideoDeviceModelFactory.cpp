@@ -15,6 +15,7 @@
 #include "CVideoDeviceModel_8036_8052.h"
 #include "CVideoDeviceModel_Hypatia.h"
 #include "CVideoDeviceModel_Hypatia2.h"
+#include "CVideoDeviceModel_Hypatia4.h"
 #include "CVideoDeviceModel_Nora.h"
 #include "CVideoDeviceModel_8062.h"
 #include "CVideoDeviceModel_8036.h"
@@ -31,12 +32,16 @@
 CVideoDeviceModel *CVideoDeviceModelFactory::CreateVideoDeviceModel(DEVSELINFO *pDeviceSelfInfo)
 {
     DEVINFORMATION deviceInfomation;
+    deviceInfomation.strDevName = nullptr;
     APC_GetDeviceInfo(CEYSDDeviceManager::GetInstance()->GetEYSD(),
                                            pDeviceSelfInfo, &deviceInfomation);
 
     CVideoDeviceModel *pModel = nullptr;
-    if (deviceInfomation.nDevType == OTHERS || deviceInfomation.nDevType == UNKNOWN_DEVICE_TYPE)
+    if (deviceInfomation.nDevType == OTHERS || deviceInfomation.nDevType == UNKNOWN_DEVICE_TYPE) {
+        if (deviceInfomation.strDevName) free(deviceInfomation.strDevName);
         return pModel;
+    }
+
     switch (deviceInfomation.wPID){
         case APC_PID_8029:
             pModel = new CVideoDeviceModel_8029(pDeviceSelfInfo); break;
@@ -78,8 +83,10 @@ CVideoDeviceModel *CVideoDeviceModelFactory::CreateVideoDeviceModel(DEVSELINFO *
         case APC_PID_8081:
             pModel = new CVideoDeviceModel_8081(pDeviceSelfInfo); break;
         case APC_PID_HYPATIA2:
-        case APC_PID_HYPATIA4:
+        case APC_PID_8072:
             pModel = new CVideoDeviceModel_Hypatia2(pDeviceSelfInfo); break;
+        case APC_PID_HYPATIA4:
+            pModel = new CVideoDeviceModel_Hypatia4(pDeviceSelfInfo); break;
         case APC_PID_NORA:
             pModel = new CVideoDeviceModel_Nora(pDeviceSelfInfo); break;
         case APC_PID_8063:
@@ -109,7 +116,7 @@ CVideoDeviceModel *CVideoDeviceModelFactory::CreateVideoDeviceModel(DEVSELINFO *
     }
 
     if (pModel) pModel->Init();
-
+    if (deviceInfomation.strDevName) free(deviceInfomation.strDevName);
     return pModel;
 }
 

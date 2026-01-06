@@ -35,6 +35,7 @@ m_pIMUDataController(nullptr)
     m_pDepthFilterOptions->SetDefaultValue();
     m_pVideoDeviceModel->ConfigDepthFilter();
     m_pSelfcalibrationController = new CSelfcalibrationController(this, m_pVideoDeviceModel);
+    m_pSelfCalibration2Controller = new CSelfCalibration2Controller(this, m_pVideoDeviceModel);
     m_pSparseModeController = new CSparseModeController(this, m_pVideoDeviceModel);
 
     Init();
@@ -65,6 +66,7 @@ CVideoDeviceController::~CVideoDeviceController()
     if (m_pIMUDataController) delete m_pIMUDataController;
     if (m_pDepthAccuracyController) delete m_pDepthAccuracyController;
     if (m_pDepthFilterOptions) delete m_pDepthFilterOptions;
+    delete m_pSelfCalibration2Controller;
 }
 
 void CVideoDeviceController::Init()

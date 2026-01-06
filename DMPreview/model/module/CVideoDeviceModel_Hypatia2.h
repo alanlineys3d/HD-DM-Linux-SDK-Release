@@ -9,8 +9,11 @@ public:
     virtual int PreparePointCloudInfo();
     virtual int AdjustZDTableIndex(int &nIndex);
     friend class CVideoDeviceModelFactory;
+    virtual int DefaultVideoMode(){ return 5; }
 protected:
     CVideoDeviceModel_Hypatia2(DEVSELINFO *pDeviceSelfInfo);
+private:
+    int AdjustZDTableByPointCloudInfo(PointCloudInfo& info);
 };
 
 #endif // CVIDEODEVICEMODEL_HYPATIA2_H

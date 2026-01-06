@@ -4,6 +4,7 @@
 #include <QDialog>
 #include "CEYSDUIView.h"
 #include "CPointCloudViewerDialog.h"
+#include "CSelfCalibration2Widget.h"
 
 namespace Ui {
 class VideoDeviceDialog;
@@ -11,6 +12,7 @@ class VideoDeviceDialog;
 
 class CSparseModeWidget;
 class CSelfCalibrationWidget;
+class CSelfCalibration2Widget;
 class CVideoDeviceDepthFilterWidget;
 class CVideoDevicePreviewWidget;
 class CVideoDeviceRegisterWidget;
@@ -71,6 +73,7 @@ private:
     void RelocateDialogPosition();
     void UpdateThermalUI();
     void UpdateSelfCalibration();
+    void UpdateSelfCalibration2();
     void UpdateSparseMode();
 
 private:
@@ -86,6 +89,7 @@ private:
     CVideoDeviceAudoWidget *m_pAudioWidget;
     CVideoDeviceDepthFilterWidget *m_pDepthFilterWidget;
     CSelfCalibrationWidget *m_pSelfCalibrationWidget;
+    CSelfCalibration2Widget *m_pSelfCalibration2Widget;
     CSparseModeWidget *m_pSparseModeWidget;
 
 

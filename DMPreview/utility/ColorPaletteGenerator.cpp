@@ -4,7 +4,6 @@
 #include <string.h>
 #include "eSPDI.h"
 #include <stdio.h>
- #include <unistd.h>
 
 double ColorPaletteGenerator::maxHueAngle = 270.0f;
 int ColorPaletteGenerator::defaultAlpha = 255;
@@ -122,7 +121,6 @@ void ColorPaletteGenerator::generatePaletteColor(RGBQUAD* palette, int size, int
         palette[i].rgbReserved	= buf[i * 4 + 3];
     }
 
-    usleep(100 * 1000);
     free(buf);
 }
 
