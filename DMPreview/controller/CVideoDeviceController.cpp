@@ -49,7 +49,6 @@ m_pIMUDataController(nullptr)
                     GetModeConfigOptions()->GetCurrentIndex();
 
         SelectModeConfigIndex(listIndex);
-
         if (GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_COLOR)) {
             UpdateStreamOptionForCombineMode(GetPreviewOptions()->GetStreamIndex(CVideoDeviceModel::STREAM_COLOR));
         } else if (GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_DEPTH)) {
@@ -143,11 +142,54 @@ void CVideoDeviceController::EnableRectifyData(bool bEnable)
     if (bEnable == m_pVideoDeviceModel->IsRectifyData()) return;
 
     m_pPreviewOptions->SetRectify(bEnable);
+
+    if (GetVideoDeviceModel()->IsESP936Series()) {
+        return;
+    }
+
     SetDepthDataType(m_pVideoDeviceModel->TransformDepthDataType(bEnable));
+}
+/**
+ * This function would be modified constantly. So make sure we try to pour our video mode decision logic here.
+ * @param nPreviewOptionDataBits is the depth data bit from the UI string.
+ * @param currentMode current selected mode config.
+ * @return
+ */
+int CVideoDeviceController::SetDepthDataTypeModelAndView(int nPreviewOptionDataBits,
+                                                         const ModeConfig::MODE_CONFIG& currentMode) {
+    constexpr int kInterleavedModeOffset = 0x02;
+    constexpr int kD11BaseVideoMode = 0x18;
+    constexpr int kD14BaseVideoMode = 0x19;
+    int depthDataType = 0;
+
+    if (!currentMode.bRectifyMode) {
+        m_pPreviewOptions->SetDepthDataType(depthDataType);
+        return m_pVideoDeviceModel->SetDepthDataType(depthDataType);
+    }
+
+    switch (nPreviewOptionDataBits) {
+        case 11: depthDataType = kD11BaseVideoMode; break;
+        case 14: depthDataType = kD14BaseVideoMode; break;
+        case 0 : depthDataType = kD11BaseVideoMode; break;
+        default:
+            return APC_NotSupport;
+    }
+
+    if (currentMode.iInterLeaveModeFPS != 0) {
+        depthDataType += kInterleavedModeOffset;
+    }
+
+    m_pPreviewOptions->SetDepthDataType(depthDataType);
+    return m_pVideoDeviceModel->SetDepthDataType(depthDataType);
 }
 
 int CVideoDeviceController::SetDepthDataBits(int nDepthDataBits)
 {
+
+    if (GetVideoDeviceModel()->IsESP936Series()) {
+        return SetDepthDataTypeModelAndView(nDepthDataBits, GetModeConfigOptions()->GetCurrentModeInfo());
+    }
+
     int depthDataType = APC_DEPTH_DATA_DEFAULT;
     switch (nDepthDataBits){
         case 8: depthDataType = APC_DEPTH_DATA_8_BITS; break;
@@ -162,6 +204,12 @@ int CVideoDeviceController::SetDepthDataBits(int nDepthDataBits)
 
 int CVideoDeviceController::SetDepthDataBits(int nDepthDataBits, bool bRectify)
 {
+
+    if (GetVideoDeviceModel()->IsESP936Series()) {
+        return SetDepthDataTypeModelAndView(nDepthDataBits,
+                                            GetModeConfigOptions()->GetCurrentModeInfo());
+    }
+
     int depthDataType = APC_DEPTH_DATA_DEFAULT;
     switch (nDepthDataBits){
         case 8: depthDataType = APC_DEPTH_DATA_8_BITS; break;
@@ -174,8 +222,21 @@ int CVideoDeviceController::SetDepthDataBits(int nDepthDataBits, bool bRectify)
     return SetDepthDataType(m_pVideoDeviceModel->TransformDepthDataType(depthDataType, bRectify));
 }
 
-int CVideoDeviceController::SetDepthDataType(int depthDataType)
-{
+int CVideoDeviceController::SetDepthDataType(int depthDataType) {
+    if (GetVideoDeviceModel()->IsESP936Series()) {
+        switch (depthDataType) {
+            case 0x18: // D11 Non-Interleave
+            case 0x19: // D14 Non-Interleave
+            case 0x1A: // D11 Interleave (0x18 + 0x02)
+            case 0x1B: // D14 Interleave (0x19 + 0x02)
+            case 0x00: // Allow setting to 0 (Non-rectified Mode)
+                break;
+            default:
+                // Invalid type for ESP936
+                return APC_VERIFY_DATA_FAIL;
+        }
+    }
+
     m_pPreviewOptions->SetDepthDataType(depthDataType);
     return m_pVideoDeviceModel->SetDepthDataType(depthDataType);
 }
@@ -225,9 +286,7 @@ int CVideoDeviceController::DoSnapShot(bool bAsync)
     }
 
     unsigned short nIRValue =  GetVideoDeviceModel()->GetIRValue();
-    bool bNeedResetIR = 0 != nIRValue &&
-                        !m_pVideoDeviceModel->IsInterleaveMode() &&
-                        !m_pPreviewOptions->IsStreamEnable(CVideoDeviceModel::STREAM_KOLOR);
+    bool bNeedResetIR = 0 != nIRValue && !m_pVideoDeviceModel->IsInterleaveMode();
     if (APC_PID_HYPATIA == m_pVideoDeviceModel->GetDeviceInformation()[0].deviceInfomation.wPID)
     {
         bNeedResetIR = false;
@@ -272,7 +331,8 @@ int CVideoDeviceController::DoSnapShot(bool bAsync)
                                                     CVideoDeviceModel::STREAM_DEPTH_30mm,
                                                     CVideoDeviceModel::STREAM_DEPTH_60mm,
                                                     CVideoDeviceModel::STREAM_DEPTH_150mm,
-                                                    CVideoDeviceModel::STREAM_DEPTH_FUSION
+                                                    CVideoDeviceModel::STREAM_DEPTH_FUSION,
+                                                    CVideoDeviceModel::STREAM_TRACK
                                                   };
 
     struct depth_data{
@@ -424,9 +484,8 @@ int CVideoDeviceController::SavePly(char *pFilePath, std::vector<CloudPoint> clo
 
 int CVideoDeviceController::GetRectifyLogData(int nIndex, eSPCtrl_RectLogData *pRectifyLogData)
 {
-    std::vector<DEVSELINFO *> deviceSelInfo = m_pVideoDeviceModel->GetDeviceSelInfo();
     return APC_GetRectifyMatLogData(CEYSDDeviceManager::GetInstance()->GetEYSD(),
-                                        deviceSelInfo[0],
+                                        GetVideoDeviceModel()->GetRectifyDefaultDeviceSelInfo(),
                                         pRectifyLogData,
                                         nIndex);
 }
@@ -478,6 +537,7 @@ int CVideoDeviceController::SelectModeConfigIndex(int nIndex)
     };
 
     ModeConfig::MODE_CONFIG modeConfig = GetModeConfigOptions()->GetCurrentModeInfo();
+
     SetStreamInfo(CVideoDeviceModel::STREAM_COLOR,
                   modeConfig.L_Resolution.Width,
                   modeConfig.L_Resolution.Height,
@@ -516,7 +576,8 @@ int CVideoDeviceController::SelectModeConfigIndex(int nIndex)
         }
     }
 
-    if(!modeConfig.vecDepthType.empty() && GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_DEPTH)){
+    if(!modeConfig.vecDepthType.empty() && (GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_DEPTH) ||
+       (GetVideoDeviceModel()->IsESP936Series() && GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_TRACK)))) {
         SetDepthDataBits(modeConfig.vecDepthType[0], modeConfig.bRectifyMode);
     } else {
         SetDepthDataBits(0, modeConfig.bRectifyMode);
@@ -570,13 +631,18 @@ int CVideoDeviceController::AdjustZRange()
 {
     int nZNear, nZFar;
     GetPreviewOptions()->GetZRange(nZNear, nZFar);
-    nZNear = std::max(nZNear, (int)m_pVideoDeviceModel->GetZDTableInfo()->nZNear);
-    GetPreviewOptions()->SetZRange(nZNear, nZFar);
 
+    // Use the configured DefaultZRange as minimum
+    // This respects INI config overrides - if config says zNear=150, minimum should be 150
+    // For cameras without config, DefaultZRange.zNear equals ZDTable minimum
     int nDefaultZNear, nDefaultZFar;
     GetPreviewOptions()->GetDefaultZRange(nDefaultZNear, nDefaultZFar);
-    nDefaultZNear = std::max(nDefaultZNear, (int)m_pVideoDeviceModel->GetZDTableInfo()->nZNear);
-    GetPreviewOptions()->SetDefaultZRange(nDefaultZNear, nDefaultZFar);
+
+    // Ensure minimum is at least ZDTable minimum AND configured minimum
+    int nMinZNear = std::max((int)m_pVideoDeviceModel->GetZDTableInfo()->nZNear, nDefaultZNear);
+    nZNear = std::max(nZNear, nMinZNear);
+
+    GetPreviewOptions()->SetZRange(nZNear, nZFar);
 
     GetControlView()->UpdateColorPalette();
 
@@ -607,7 +673,8 @@ int CVideoDeviceController::UpdateSpecificDepthPosition(int x, int y)
                                                       CVideoDeviceModel::STREAM_DEPTH_30mm,
                                                       CVideoDeviceModel::STREAM_DEPTH_60mm,
                                                       CVideoDeviceModel::STREAM_DEPTH_150mm,
-                                                      CVideoDeviceModel::STREAM_DEPTH_FUSION
+                                                      CVideoDeviceModel::STREAM_DEPTH_FUSION,
+                                                      CVideoDeviceModel::STREAM_TRACK
                                                     };
 
     for (CVideoDeviceModel::STREAM_TYPE depthStream : depthStreams){
@@ -640,4 +707,17 @@ bool CVideoDeviceController::GetAutoReconnectStatus()
 void CVideoDeviceController::SetAutoReconnectStatus(bool auto_reconnet)
 {
     m_pVideoDeviceModel->SetAutoReconnectStatus(auto_reconnet);
+}
+
+std::vector<QString> CVideoDeviceController::GetStreamResolutionList(CVideoDeviceModel::STREAM_TYPE type) {
+    std::vector<QString> resolutionList;
+    std::vector<APC_STREAM_INFO> infoList = GetVideoDeviceModel()->GetStreamInfoList(type);
+    
+    for (const APC_STREAM_INFO& info : infoList){
+        QString resolution;
+        resolution.sprintf("[%d x %d] %s", info.nWidth, info.nHeight, info.bFormatMJPG ? "MJPG" : "YUV");
+        resolutionList.push_back(resolution);
+    }
+    
+    return resolutionList;
 }

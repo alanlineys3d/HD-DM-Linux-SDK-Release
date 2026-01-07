@@ -923,7 +923,8 @@ int CVideoDeviceModel::UpdateZDTable()
 
     zdTableInfo.nDataType = APC_DEPTH_DATA_11_BITS;
     memset(m_zdTableInfo.ZDTable, 0, sizeof(m_zdTableInfo.ZDTable));
-    if (m_deviceInfo[0].deviceInfomation.nDevType == PUMA) {
+    auto devType = m_deviceInfo[0].deviceInfomation.nDevType;
+    if (devType == PUMA || devType == GRAPE) {
         m_zdTableInfo.nTableSize = APC_ZD_TABLE_FILE_SIZE_11_BITS;
     } else {
         m_zdTableInfo.nTableSize = APC_ZD_TABLE_FILE_SIZE_8_BITS;
@@ -946,10 +947,13 @@ int CVideoDeviceModel::UpdateZDTable()
             zdTableInfo.nIndex = 3;
         }
     }
+
+    auto selectedDevice = m_deviceInfo[0].deviceInfomation.nDevType == GRAPE ? m_deviceSelInfo[2] : m_deviceSelInfo[0];
     RETRY_APC_API(ret, APC_GetZDTable(CEYSDDeviceManager::GetInstance()->GetEYSD(),
-                                            m_deviceSelInfo[0],
-                                            m_zdTableInfo.ZDTable, m_zdTableInfo.nTableSize,
-                                            &nActualLength, &zdTableInfo));
+                                      selectedDevice,
+                                      m_zdTableInfo.ZDTable, m_zdTableInfo.nTableSize,
+                                      &nActualLength, &zdTableInfo));
+
 
     if (APC_OK != ret) return ret;
 
@@ -1050,6 +1054,13 @@ bool CVideoDeviceModel::IsStreamAvailable()
     return bColorStream || bDepthStream;
 }
 
+void CVideoDeviceModel::UpdateImageProcessor() {
+    m_pVideoDeviceController->UpdateImageProcessor(m_imageData[STREAM_COLOR].nWidth, m_imageData[STREAM_COLOR].nHeight,
+                                                   m_imageData[STREAM_DEPTH].nWidth, m_imageData[STREAM_DEPTH].nHeight,
+                                                   APCImageType::DepthDataTypeToDepthImageType(
+                                                           m_imageData[STREAM_DEPTH].depthDataType));
+}
+
 int CVideoDeviceModel::StartStreaming()
 {
     bool bIsMIPIClkContinueMode = m_pVideoDeviceController->GetPreviewOptions()->IsMIPIClkContinueMode();
@@ -1076,9 +1087,7 @@ int CVideoDeviceModel::StartStreaming()
     }
 
 
-    m_pVideoDeviceController->UpdateImageProcessor(m_imageData[STREAM_COLOR].nWidth, m_imageData[STREAM_COLOR].nHeight,
-                                                   m_imageData[STREAM_DEPTH].nWidth, m_imageData[STREAM_DEPTH].nHeight,
-                                                   APCImageType::DepthDataTypeToDepthImageType(m_imageData[STREAM_DEPTH].depthDataType));
+    UpdateImageProcessor();
     PreparePointCloudInfo();
 
     ret = OpenDevice();
@@ -2104,6 +2113,7 @@ int CVideoDeviceModel::UpdateFrameGrabberData(STREAM_TYPE streamType)
             break;
         }
         case STREAM_DEPTH:
+        case STREAM_TRACK:
         {
             UpdateFrameGrabberDepthData(streamType);
             break;

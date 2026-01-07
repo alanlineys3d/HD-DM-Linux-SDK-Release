@@ -131,3 +131,9 @@ float CCameraPropertyController::SetAETarget(int index)
 {
     return m_pVideoDeviceModel->GetCameraproperty()[m_nCurrentIndex]->SetAETargetIndex(index);
 }
+
+bool CCameraPropertyController::IsAETargetSupport()
+{
+    if (!m_pVideoDeviceModel) return false;
+    return m_pVideoDeviceModel->IsAETargetSupport();
+}

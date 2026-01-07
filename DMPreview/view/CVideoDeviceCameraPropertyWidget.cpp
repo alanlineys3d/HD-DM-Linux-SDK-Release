@@ -210,6 +210,7 @@ void CVideoDeviceCameraPropertyWidget::UpdateAETarget()
 {
     bool bIsAutoExposureSupport = m_pCameraPropertyController->IsCameraPropertySupport(CCameraPropertyModel::AUTO_EXPOSURE);
     bool bIsAutoExposureValid = m_pCameraPropertyController->IsCameraPropertyValid(CCameraPropertyModel::AUTO_EXPOSURE);
+    bool bIsAETargetSupport = m_pCameraPropertyController->IsAETargetSupport();
 
     int nValue = 0;
     if (bIsAutoExposureValid){
@@ -220,7 +221,7 @@ void CVideoDeviceCameraPropertyWidget::UpdateAETarget()
     ui->checkBox_auto_exposure->setChecked(IsAutoExposure);
     ui->checkBox_auto_exposure->blockSignals(false);
 
-    ui->widget_ae_target->setVisible(IsAutoExposure);
+    ui->widget_ae_target->setVisible(IsAutoExposure && bIsAETargetSupport);
     ui->widget_ae_target->setEnabled(IsAutoExposure);
 
     if(ui->widget_ae_target->isVisible()){

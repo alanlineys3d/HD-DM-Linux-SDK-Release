@@ -333,6 +333,7 @@ static void resume_streaming();
 static int high_low_exchange(int data);
 static void *set_analog_gain_test_func(void *arg);
 static void *set_digital_gain_test_func(void *arg);
+static void case108_esp936_stress_test(void);
 static unsigned int gCameraPID = 0xffff;
 
 #define _ENABLE_INTERACTIVE_UI_ 1
@@ -457,6 +458,24 @@ public:
         while (isStart()) {
             f->status = APC_GetDepthImageWithTimestamp(mDeviceHandle, &mDevSelInfo, f->dataVec.data(),
                                                        &f->actualImageSize, &f->sn, 0, &f->ts_s, &f->ts_us);
+            mCallback(f);
+        }
+    }
+};
+
+class eSP936CallbackHelper : public FrameCallbackHelper {
+public:
+    explicit eSP936CallbackHelper(void* handle, DEVSELINFO info, size_t w, size_t h, size_t bpp, Callback& cb) :
+            FrameCallbackHelper(handle, info, w, h, bpp, cb) {};
+    eSP936CallbackHelper (const eSP936CallbackHelper&) = delete;
+    eSP936CallbackHelper& operator=(eSP936CallbackHelper& helper) = delete;
+
+    virtual void runner(Frame *f) override {
+        if (!f->width || !f->height) {
+            return;
+        }
+        while (isStart()) {
+            f->status = APC_GetImage(mDeviceHandle, &mDevSelInfo, f->dataVec.data(), &f->actualImageSize, &f->sn, 0);
             mCallback(f);
         }
     }
@@ -755,8 +774,12 @@ int main(void)
         printf("104. IVY2 / IVY4 Write the output write.bin file of the calibration tool to the camera.\n");
         printf("     Put write.bin file into calibrationdata/write folder\n");
         printf("105. General Streaming Loop Test.\n");
-        printf("106. Profile YUY2 decode Loop Test.\n");
+        printf("106. Profile YUY2 decode Loop Test with aligned memory.\n");
         printf("107. Self-Calibration 2 method test.\n");
+        printf("108. 80363 eSP936 stress test.\n");
+        printf("109. 80363 eSP936 save file test.\n");
+        printf("110. Allocate user pointers to get frames without memcpy.\n");
+        printf("111. Allocate user pointers with color and depth images.\n");
         printf("255. EXIT)\n");
         scanf("%d", &input);
         switch (input) {
@@ -2950,8 +2973,30 @@ int main(void)
             }
 
             const std::size_t imageSize = cw * ch * 2;
-            auto randomImage = new unsigned char[imageSize];
-            auto decodedImage = new unsigned char[imageSize/2 * 3];
+            // Allocate 1024-byte aligned memory using posix_memalign
+            unsigned char* randomImage = nullptr;
+            unsigned char* decodedImage = nullptr;
+            int result1 = posix_memalign((void**)&randomImage, 1024, imageSize);
+            if (result1 != 0) {
+                fprintf(stderr, "Failed to allocate aligned memory for randomImage: %s\n", strerror(result1));
+            }
+
+            int result2 = posix_memalign((void**)&decodedImage, 1024, imageSize/2 * 3);
+            if (result2 != 0) {
+                fprintf(stderr, "Failed to allocate aligned memory for decodedImage: %s\n", strerror(result2));
+            }
+
+            if ((uintptr_t)decodedImage % 1024 == 0) {
+                printf("1024-byte decodedImage aligned\n");
+            } else {
+                printf("Not 1024-byte decodedImage aligned\n");
+            }
+            if ((uintptr_t)randomImage % 1024 == 0) {
+                printf("1024-byte randomImage aligned\n");
+            } else {
+                printf("Not 1024-byte randomImage aligned\n");
+            }
+
 
             auto generateTestPattern = [] (unsigned char* buffer, int width, int height) {
                 for (int y = 0; y < height; ++y) {
@@ -2984,8 +3029,8 @@ int main(void)
             fprintf(stderr, "[eys3d_case_106] Resolution %dx%d Average Ms: %f for %d frames\n", cw, ch,
                     averageFrameProcessTimeUs / 1000, run);
 
-            delete randomImage;
-            delete decodedImage;
+            free(randomImage);
+            free(decodedImage);
 
             APC_Release(&cameraHandle);
             break;
@@ -3121,6 +3166,757 @@ int main(void)
 
             APC_Release(&cameraHandle);
             break;
+        }
+        case 109: {
+            // YX80363 DVT sample:
+
+            void* cameraHandle = nullptr;
+            DEVSELINFO devSelInfo;
+            devSelInfo.index = 0;
+            DEVSELINFO devSelInfoPath1;
+            devSelInfoPath1.index = 1;
+            DEVSELINFO devSelInfoPathMono;
+            devSelInfoPathMono.index = 2;
+
+            int fps = 30;
+            int cw = 2560, ch = 960;
+            int dw = 1280, dh = 960;
+            int depthDataType = 4;
+            int isMjpeg = 0;
+
+            int ret = APC_Init(&cameraHandle, false);
+
+            if (!cameraHandle) {
+                fprintf(stderr, "Null handle reason %d\n", ret);
+                return 0;
+            }
+
+            printf("Choose YUYV:0 MJPEG:1 \n");
+            scanf("%d", &isMjpeg);
+            printf("Color width:\n");
+            scanf("%d", &cw);
+            printf("Color height:\n");
+            scanf("%d", &ch);
+            printf("Depth width:\n");
+            scanf("%d", &dw);
+            printf("Depth height:\n");
+            scanf("%d", &dh);
+            printf("Choose FPS:\n");
+            scanf("%d", &fps);
+            printf("Choose Depth data type\nD(11Bits)=4\nZ(14Bits)=2\nColor Only L'+R'=5\nColor Only L+R=0\n");
+            scanf("%d", &depthDataType);
+
+            int deviceCount = APC_GetDeviceNumber(cameraHandle);
+            fprintf(stderr, "Device Count: %d\n", deviceCount);
+            DEVSELINFO printDevSelInfo;
+            std::map<int, unsigned short> mapDeviceIndexToUSBPortNumber; /* Stand for device on the same connector */
+            const int maxStreamTypeCount = deviceCount;
+            std::vector<APC_STREAM_INFO> resolutionList[maxStreamTypeCount];
+            for (auto& vec : resolutionList) {
+                vec.resize(24);  // Each element will be default-initialized
+            }
+
+            for(int i = 0; i < deviceCount; i++) {
+                printDevSelInfo.index = i;
+
+                const size_t kFWVersionSize = 256;
+                char fwVersion[kFWVersionSize];
+                int nActualLength = 0;
+                if (!APC_GetFwVersion(cameraHandle, &printDevSelInfo, fwVersion, kFWVersionSize, &nActualLength)) {
+                    fprintf(stderr, "Camera firmware version %s\n", fwVersion);
+                }
+
+                DEVINFORMATION info;
+                if (!APC_GetDeviceInfo(cameraHandle, &printDevSelInfo, &info)) {
+                    fprintf(stderr, "Device Name: %s\n", info.strDevName);
+                    fprintf(stderr, "Product ID: 0x%04x\n", info.wPID);
+                    fprintf(stderr, "Vendor ID: 0x%04x\n", info.wVID);
+                    fprintf(stderr, "ChipID: 0x%x\n", info.nChipID);
+                    fprintf(stderr, "Device Type: %d\n", info.nDevType);
+                }
+
+                DEVINFORMATIONEX printDevSelInfoEx;
+                if (!APC_GetDeviceInfoEx(cameraHandle, &printDevSelInfo, &printDevSelInfoEx)) {
+                    fprintf(stderr, "USB Port hash: %d\n", printDevSelInfoEx.wUsbNode);
+                }
+
+                auto it = mapDeviceIndexToUSBPortNumber.find(printDevSelInfo.index);
+                if (it == mapDeviceIndexToUSBPortNumber.end() /* key not found */ ) {
+                    mapDeviceIndexToUSBPortNumber[printDevSelInfo.index] = printDevSelInfoEx.wUsbNode;
+                }
+
+                APC_GetDeviceResolutionList(cameraHandle,
+                                            &printDevSelInfo,
+                                            maxStreamTypeCount, &resolutionList[i][0],
+                                            maxStreamTypeCount, nullptr);
+            }
+
+            for (const auto& pair : mapDeviceIndexToUSBPortNumber) {
+                std::cout << "  Device Index: " << pair.first << ", USB Port: " << pair.second << std::endl;
+            }
+
+            for (int deviceIndex = 1; deviceIndex < deviceCount; deviceIndex++) {
+                fprintf(stderr, "\nDevice %d Resolutions:\n", deviceIndex);
+                for (const auto& resolution : resolutionList[deviceIndex]) {
+                    fprintf(stderr, "  Width: %d, Height: %d, FORMAT: %s\n",
+                            resolution.nWidth,
+                            resolution.nHeight,
+                            resolution.bFormatMJPG ? "MJPEG" : "YUYV");
+                }
+            }
+
+            APC_SetDepthDataType(cameraHandle, &devSelInfoPath1, depthDataType);
+
+            APC_SetupBlock(cameraHandle, &devSelInfoPath1, true);
+
+            APC_SetupBlock(cameraHandle, &devSelInfoPathMono, true);
+
+
+            if (cw != 0){
+                ret = APC_OpenDevice2(cameraHandle, &devSelInfoPath1, cw, ch, isMjpeg, 0, 0, DEPTH_IMG_NON_TRANSFER, false,
+                                      nullptr, &fps);
+            }
+
+            if (dw != 0) {
+                ret = APC_OpenDevice2(cameraHandle, &devSelInfoPathMono, dw, dh, false, 0, 0, DEPTH_IMG_NON_TRANSFER, false,
+                                      nullptr, &fps);
+            }
+
+
+            if (ret) {
+                fprintf(stderr, "Open device failed %d\n", ret);
+                return 0;
+            }
+
+            std::vector<uint16_t> zdBuffer;
+            zdBuffer.resize(APC_ZD_TABLE_FILE_SIZE_11_BITS/2);
+            int actualZDLen = 0;
+            ZDTABLEINFO zdInfo { .nIndex = 0, .nDataType = APC_DEPTH_DATA_11_BITS};
+            ret = APC_GetZDTable(cameraHandle, &devSelInfoPathMono, (uint8_t *) zdBuffer.data(),
+                                 APC_ZD_TABLE_FILE_SIZE_11_BITS, &actualZDLen, &zdInfo);
+
+            if (ret) fprintf(stderr, "Get ZD Table failed %d\n", ret);
+
+            for (int i = 1; i < APC_ZD_TABLE_FILE_SIZE_11_BITS / 2; ++i) {
+                zdBuffer[i] = __bswap_16(zdBuffer[i]);
+                //fprintf(stderr, "Get ZD Table %d %u\n", i, zdBuffer[i]);
+            }
+
+            eSPCtrl_RectLogData rectifyData;
+            ret = APC_GetRectifyMatLogData(cameraHandle, &devSelInfo, &rectifyData, zdInfo.nIndex);
+            if (ret) fprintf(stderr, "Get RectifyMatLogData Table failed %d\n", ret);
+            else {
+                float baseline = 1.0f / rectifyData.ReProjectMat[14];
+                float focalLength = rectifyData.ReProjectMat[11];
+                float cx = rectifyData.CamMat1[2];
+                float fx = rectifyData.CamMat1[0];
+                float cy = rectifyData.CamMat1[5];
+                float fy = rectifyData.CamMat1[4];
+                float fxp = rectifyData.NewCamMat1[0];
+                float cxp = rectifyData.NewCamMat1[2];
+                float fyp = rectifyData.NewCamMat1[5];
+                float cyp = rectifyData.NewCamMat1[6];
+                float r0 = rectifyData.LRotaMat[0];
+                float r1 = rectifyData.LRotaMat[1];
+                float r2 = rectifyData.LRotaMat[2];
+                float r3 = rectifyData.LRotaMat[3];
+                float r4 = rectifyData.LRotaMat[4];
+                float r5 = rectifyData.LRotaMat[5];
+                float r6 = rectifyData.LRotaMat[6];
+                float r7 = rectifyData.LRotaMat[7];
+                float r8 = rectifyData.LRotaMat[8];
+
+                fprintf(stderr, "Rectify Log Data\ncx:[%4f], fx[%4f], cy[%4f], fy[%4f]\n"
+                                "cx':[%4f], cy':[%4f], fx':[%4f], fy':[%4f]\n"
+                                "rectification transform = [%4f %4f %4f %4f %4f %4f %4f %4f %4f]\n"
+                                "baseline:[%f] focal length:[%f]", cx, fx, cy, fy, cxp, cyp, fxp, fyp,
+                        r0, r1, r2, r3, r4, r5, r6, r7, r8,
+                        baseline, focalLength);
+            }
+
+            libeys3dsample::FrameCallbackHelper::Callback colorCallbackFn([&] (const libeys3dsample::Frame *f) {
+                static uint64_t timeLastSavingTsUs = 0;
+                uint64_t currentTsUs = f->ts_s * 1000000 + f->ts_us;
+                bool isNeedSavingFile = true;
+
+                fprintf(stderr, "Inside color callback frame.sn=%d status=%d [ts_s=%ld ts_us=%ld]\n", f->sn, f->status,
+                        f->ts_s, f->ts_us);
+
+                if (isNeedSavingFile) {
+                    std::string rawFileName(SAVE_FILE_PATH"color_");
+                    rawFileName.append(std::to_string(f->sn));
+                    if (isMjpeg) {
+                        rawFileName.append(".jpg");
+                    } else {
+                        rawFileName.append(".yuv");
+                    }
+                    fprintf(stderr, "Saving start... %s\n", rawFileName.c_str());
+                    saveRawFile(rawFileName.c_str(), (uint8_t *) f->dataVec.data(), f->dataVec.size());
+
+                    fprintf(stderr, "Saving RGB file...\n");
+
+                    std::string rgbFileName(SAVE_FILE_PATH"rgb_");
+                    rgbFileName.append(std::to_string(f->sn));
+                    rgbFileName.append(".raw");
+
+                    auto writeRGBFileBuffer = new std::vector<uint8_t>();
+                    writeRGBFileBuffer->resize(f->width * f->height * 3);
+
+                    APC_ColorFormat_to_RGB24(cameraHandle, &devSelInfo, writeRGBFileBuffer->data(),
+                                             (uint8_t*) f->dataVec.data(), f->actualImageSize, f->width, f->height,
+                                             isMjpeg ? APCImageType::COLOR_MJPG : APCImageType::COLOR_YUY2);
+
+                    saveRawFile(rgbFileName.c_str(), (unsigned char*) writeRGBFileBuffer->data(),
+                                writeRGBFileBuffer->size());
+
+                    delete writeRGBFileBuffer;
+                    timeLastSavingTsUs = currentTsUs;
+                    fprintf(stderr, "Saving end... %s %s\n", rawFileName.c_str(), rgbFileName.c_str());
+                }
+
+                return f->status;
+            });
+
+            libeys3dsample::FrameCallbackHelper::Callback depthCallbackFn([&zdBuffer] (const libeys3dsample::Frame *f) {
+                static uint64_t timeLastSavingTsUs = 0;
+                uint64_t currentTsUs = f->ts_s * 1000000 + f->ts_us;
+                bool isNeedSavingFile = true;
+
+                fprintf(stderr, "Inside depth callback frame.sn=%d status=%d [ts_s=%ld ts_us=%ld]\n", f->sn, f->status,
+                        f->ts_s, f->ts_us);
+
+                if (isNeedSavingFile) {
+                    fprintf(stderr, "Saving start... %d\n", f->sn);
+                    std::string rawFileName(SAVE_FILE_PATH"DisparityMap_");
+                    rawFileName.append(std::to_string(f->sn));
+                    rawFileName.append(".raw");
+                    saveRawFile(rawFileName.c_str(), (uint8_t *) f->dataVec.data(), f->dataVec.size());
+
+                    fprintf(stderr, "Saving Distance Map...\n");
+                    std::string distanceFileName(SAVE_FILE_PATH"Z14_");
+                    distanceFileName.append(std::to_string(f->sn));
+                    distanceFileName.append(".yuv");
+
+                    auto distanceBuffer = new std::vector<uint16_t>();
+                    distanceBuffer->resize(f->width * f->height);
+
+                    auto pD11BufPixelWalker = (uint16_t*) f->dataVec.data();
+                    for (int i = 0, maxPixelCnt = f->width * f->height; i < maxPixelCnt; ++i, pD11BufPixelWalker++) {
+                        // Verification formula:
+                        // Z(mm) = [Focal Len(mm) * Baseline(mm) / Disparity(mm)] * 8
+                        // Multiply by 8 due to interpolation from 8 Bits to 11 Bits
+                        uint16_t index = *pD11BufPixelWalker;
+                        distanceBuffer->at(i) = zdBuffer[index];
+                    }
+
+                    saveRawFile(distanceFileName.c_str(), (uint8_t *) distanceBuffer->data(),
+                                distanceBuffer->size() * sizeof(uint16_t));
+
+                    timeLastSavingTsUs = currentTsUs;
+                    fprintf(stderr, "Saving end... %s:%zu %s:%zu Bytes \n", rawFileName.c_str(), f->dataVec.size(),
+                            distanceFileName.c_str(), distanceBuffer->size());
+                    delete distanceBuffer;
+                }
+
+                return f->status;
+            });
+
+
+            libeys3dsample::eSP936CallbackHelper colorCallbackHelper(cameraHandle, devSelInfoPath1, cw, ch, 2,
+                                                                     colorCallbackFn);
+
+            libeys3dsample::eSP936CallbackHelper depthCallbackHelper(cameraHandle, devSelInfoPathMono, dw, dh, 2,
+                                                                     depthCallbackFn);
+
+            if (cw != 0) colorCallbackHelper.start();
+            sleep(3); // FIXME is needed or not?
+            if (dw != 0) depthCallbackHelper.start();
+
+            sleep(10);
+
+            if (cw != 0) colorCallbackHelper.stop();
+            if (dw != 0) depthCallbackHelper.stop();
+
+            ret |= APC_CloseDevice(cameraHandle, &devSelInfoPathMono);
+            ret |= APC_CloseDevice(cameraHandle, &devSelInfoPath1);
+            fprintf(stderr, "APC_CloseDevice end... %d\n", ret);
+
+            APC_Release(&cameraHandle);
+            break;
+        }
+        case 108: {
+            case108_esp936_stress_test();
+            break;
+        }
+        case 110: {
+            // USERPTR mode demonstration - zero-copy image acquisition
+            printf("=== Case 110: USERPTR Mode Demo ===\n");
+
+            int fps = 30;
+            int cw = 2560, ch = 960;
+            int dw = 1280, dh = 960;
+            int depthDataType = 4;
+            int isMjpeg = 0;
+            void* cameraHandle = nullptr;
+            DEVSELINFO devSelInfo;
+            devSelInfo.index = 0;
+            int ret = APC_Init(&cameraHandle, true);
+
+            if (!cameraHandle) {
+                fprintf(stderr, "Null handle reason %d\n", ret);
+                return 0;
+            }
+
+            APC_SetupBlock(cameraHandle, &devSelInfo, true);
+
+            printf("APC_Init success\n");
+            printf("Choose YUYV:0 MJPEG:1 \n");
+            scanf("%d", &isMjpeg);
+            printf("Color width:\n");
+            scanf("%d", &cw);
+            printf("Color height:\n");
+            scanf("%d", &ch);
+            printf("Depth width:\n");
+            scanf("%d", &dw);
+            printf("Depth height:\n");
+            scanf("%d", &dh);
+            printf("Choose FPS:\n");
+            scanf("%d", &fps);
+            printf("Choose Depth data type\nD(11Bits)=4\nZ(14Bits)=2\nColor Only L'+R'=5\nColor Only L+R=0\n");
+            scanf("%d", &depthDataType);
+
+            size_t bufferSize = cw * ch * 2;
+            size_t pageSize = sysconf(_SC_PAGESIZE);
+            bufferSize = ((bufferSize + pageSize - 1) / pageSize) * pageSize;
+
+            if (bufferSize == 0) {
+                APC_Release(&cameraHandle);
+                break;
+            }
+            printf("Required buffer size: %zu bytes\n", bufferSize);
+
+            // 4. Allocate user buffers (page-aligned for performance)
+            const int NUM_BUFFERS = 4;
+            void *bufferList[NUM_BUFFERS];
+            size_t bufferSizes[NUM_BUFFERS];
+
+            for (int i = 0; i < NUM_BUFFERS; i++) {
+                bufferList[i] = aligned_alloc(pageSize, bufferSize);
+                if (!bufferList[i]) {
+                    printf("Failed to allocate buffer %d\n", i);
+                    // Clean up previously allocated buffers
+                    for (int j = 0; j < i; j++) {
+                        free(bufferList[j]);
+                    }
+                    APC_Release(&cameraHandle);
+                    break;
+                }
+                bufferSizes[i] = bufferSize;
+                printf("Allocated buffer %d: %p, size: %zu\n", i, bufferList[i], bufferSize);
+            }
+
+            // 5. Open device in USERPTR mode
+            ret = APC_OpenDevice2(cameraHandle, &devSelInfo, cw, ch, isMjpeg, dw, dh,
+                                  DEPTH_IMG_NON_TRANSFER, false, NULL, &fps, IMAGE_USERPTR_MODE);
+            if (ret != APC_OK) {
+                printf("APC_OpenDevice2 USERPTR mode failed: %d\n", ret);
+                for (int i = 0; i < NUM_BUFFERS; i++) {
+                    free(bufferList[i]);
+                }
+                APC_Release(&cameraHandle);
+                break;
+            }
+            printf("APC_OpenDevice2 USERPTR mode success, FPS: %d\n", fps);
+
+            // 6. Register user buffers
+            ret = APC_RegisterUserBuffers(cameraHandle, &devSelInfo, bufferList, bufferSizes, NUM_BUFFERS);
+            if (ret != APC_OK) {
+                printf("APC_RegisterUserBuffers failed: %d\n", ret);
+                APC_CloseDevice(cameraHandle, &devSelInfo);
+                for (int i = 0; i < NUM_BUFFERS; i++) {
+                    free(bufferList[i]);
+                }
+                APC_Release(&cameraHandle);
+                break;
+            }
+            printf("APC_RegisterUserBuffers success with %d buffers\n", NUM_BUFFERS);
+
+            // 7. Acquire images using NEW USERPTR mechanism (let V4L2 choose buffer)
+            printf("Starting zero-copy image acquisition (V4L2 determines buffers)...\n");
+            for (int frame = 0; frame < 1000; frame++) {
+                unsigned long imageSize;
+                int serial;
+
+                // NEW APPROACH: Let V4L2 determine which buffer to use
+                unsigned char *actualBuffer = nullptr;
+                ret = APC_GetColorImage(cameraHandle, &devSelInfo, nullptr,  // Ignore old pBuf parameter
+                                       &imageSize, &serial, depthDataType, &actualBuffer);  // Get actual buffer
+
+                if (ret == APC_OK) {
+                    printf("Frame %d: V4L2_provided_buffer=%p, size=%lu, serial=%d (zero-copy)\n",
+                           frame, actualBuffer, imageSize, serial);
+
+                    // Recycle whatever buffer V4L2 actually provided
+                    ret = APC_RecycleBuffer(cameraHandle, &devSelInfo, actualBuffer);
+                    if (ret != APC_OK) {
+                        printf("Frame %d: APC_RecycleBuffer failed: %d\n", frame, ret);
+                        break;
+                    }
+                } else {
+                    printf("Frame %d: APC_GetColorImage failed: %d\n", frame, ret);
+                    break;
+                }
+            }
+
+            // 8. Cleanup (automatic via APC_CloseDevice)
+            printf("Cleaning up...\n");
+            APC_CloseDevice(cameraHandle, &devSelInfo);  // Automatically unregisters buffers
+
+            // Free user-allocated buffers
+            for (int i = 0; i < NUM_BUFFERS; i++) {
+                free(bufferList[i]);
+                printf("Freed buffer %d\n", i);
+            }
+
+            APC_Release(&cameraHandle);
+            printf("=== Case 110 completed ===\n");
+            break;
+        }
+        case 111: {
+            // USERPTR dual-thread streaming test with auto exposure
+            printf("=== Case 111: USERPTR Dual-Thread Streaming Test ===\n");
+
+            // Local variables for easier modification
+            int fps = 30;
+            int cw = 2560, ch = 960;
+            int dw = 1280, dh = 960;
+            int depthDataType = 4;
+            int isMjpeg = 0;
+            int testDurationSec = 30;
+
+            void* cameraHandle = nullptr;
+            DEVSELINFO devSelInfo;
+            devSelInfo.index = 0;
+            int ret = APC_Init(&cameraHandle, false);
+
+            if (!cameraHandle) {
+                fprintf(stderr, "Null handle reason %d\n", ret);
+                return 0;
+            }
+
+            APC_SetupBlock(cameraHandle, &devSelInfo, true);
+            printf("APC_Init success\n");
+
+            printf("Choose YUYV:0 MJPEG:1 \n");
+            scanf("%d", &isMjpeg);
+            printf("Color width:\n");
+            scanf("%d", &cw);
+            printf("Color height:\n");
+            scanf("%d", &ch);
+            printf("Depth width:\n");
+            scanf("%d", &dw);
+            printf("Depth height:\n");
+            scanf("%d", &dh);
+            printf("Choose FPS:\n");
+            scanf("%d", &fps);
+            printf("Choose Depth data type\nD(11Bits)=4\nZ(14Bits)=2\nColor Only L'+R'=5\nColor Only L+R=0\n");
+            scanf("%d", &depthDataType);
+            printf("Test duration (seconds):\n");
+            scanf("%d", &testDurationSec);
+
+            // Calculate buffer sizes
+            size_t colorBufferSize = cw * ch * 2;
+            size_t depthBufferSize = dw * dh * 2;
+            size_t pageSize = sysconf(_SC_PAGESIZE);
+            colorBufferSize = ((colorBufferSize + pageSize - 1) / pageSize) * pageSize;
+            depthBufferSize = ((depthBufferSize + pageSize - 1) / pageSize) * pageSize;
+
+            if (colorBufferSize == 0 && depthBufferSize == 0) {
+                APC_Release(&cameraHandle);
+                break;
+            }
+
+            printf("Color buffer size: %zu bytes, Depth buffer size: %zu bytes\n",
+                   colorBufferSize, depthBufferSize);
+
+            // Allocate color buffers
+            const int NUM_COLOR_BUFFERS = 4;
+            const int NUM_DEPTH_BUFFERS = 4;
+            void *colorBufferList[NUM_COLOR_BUFFERS];
+            size_t colorBufferSizes[NUM_COLOR_BUFFERS];
+            void *depthBufferList[NUM_DEPTH_BUFFERS];
+            size_t depthBufferSizes[NUM_DEPTH_BUFFERS];
+
+            // Allocate color buffers
+            bool colorAllocSuccess = true;
+            if (cw > 0 && ch > 0) {
+                for (int i = 0; i < NUM_COLOR_BUFFERS; i++) {
+                    colorBufferList[i] = aligned_alloc(pageSize, colorBufferSize);
+                    if (!colorBufferList[i]) {
+                        printf("Failed to allocate color buffer %d\n", i);
+                        for (int j = 0; j < i; j++) {
+                            free(colorBufferList[j]);
+                        }
+                        colorAllocSuccess = false;
+                        break;
+                    }
+                    colorBufferSizes[i] = colorBufferSize;
+                    printf("Allocated color buffer %d: %p, size: %zu\n", i, colorBufferList[i], colorBufferSize);
+                }
+            }
+
+            // Allocate depth buffers
+            bool depthAllocSuccess = true;
+            if (dw > 0 && dh > 0) {
+                for (int i = 0; i < NUM_DEPTH_BUFFERS; i++) {
+                    depthBufferList[i] = aligned_alloc(pageSize, depthBufferSize);
+                    if (!depthBufferList[i]) {
+                        printf("Failed to allocate depth buffer %d\n", i);
+                        for (int j = 0; j < i; j++) {
+                            free(depthBufferList[j]);
+                        }
+                        depthAllocSuccess = false;
+                        break;
+                    }
+                    depthBufferSizes[i] = depthBufferSize;
+                    printf("Allocated depth buffer %d: %p, size: %zu\n", i, depthBufferList[i], depthBufferSize);
+                }
+            }
+
+            if (!colorAllocSuccess || !depthAllocSuccess) {
+                if (colorAllocSuccess) {
+                    for (int i = 0; i < NUM_COLOR_BUFFERS; i++) {
+                        free(colorBufferList[i]);
+                    }
+                }
+                APC_Release(&cameraHandle);
+                break;
+            }
+
+            ret = APC_SetDepthDataType(cameraHandle, &devSelInfo, depthDataType);
+            // Open device in USERPTR mode
+            ret = APC_OpenDevice2(cameraHandle, &devSelInfo, cw, ch, isMjpeg, dw, dh,
+                                  DEPTH_IMG_NON_TRANSFER, false, NULL, &fps, IMAGE_USERPTR_MODE);
+            if (ret != APC_OK) {
+                printf("APC_OpenDevice2 USERPTR mode failed: %d\n", ret);
+                if (cw > 0 && ch > 0) {
+                    for (int i = 0; i < NUM_COLOR_BUFFERS; i++) {
+                        free(colorBufferList[i]);
+                    }
+                }
+                if (dw > 0 && dh > 0) {
+                    for (int i = 0; i < NUM_DEPTH_BUFFERS; i++) {
+                        free(depthBufferList[i]);
+                    }
+                }
+                APC_Release(&cameraHandle);
+                break;
+            }
+            printf("APC_OpenDevice2 USERPTR mode success, FPS: %d\n", fps);
+
+            // Register user buffers
+            if (cw > 0 && ch > 0) {
+                ret = APC_RegisterUserBuffers(cameraHandle, &devSelInfo, colorBufferList, colorBufferSizes, NUM_COLOR_BUFFERS);
+                if (ret != APC_OK) {
+                    printf("APC_RegisterUserBuffers failed: %d\n", ret);
+                    APC_CloseDevice(cameraHandle, &devSelInfo);
+                    for (int i = 0; i < NUM_COLOR_BUFFERS; i++) {
+                        free(colorBufferList[i]);
+                    }
+                    for (int i = 0; i < NUM_DEPTH_BUFFERS; i++) {
+                        free(depthBufferList[i]);
+                    }
+                    APC_Release(&cameraHandle);
+                    break;
+                }
+                printf("APC_RegisterUserBuffers success with %d color buffers\n", NUM_COLOR_BUFFERS);
+            }
+
+            if (dw > 0 && dh > 0) {
+                ret = APC_RegisterUserDepthBuffers(cameraHandle, &devSelInfo, depthBufferList, depthBufferSizes, NUM_DEPTH_BUFFERS);
+                if (ret != APC_OK) {
+                    printf("APC_RegisterUserDepthBuffers failed: %d\n", ret);
+                    APC_CloseDevice(cameraHandle, &devSelInfo);
+                    for (int i = 0; i < NUM_COLOR_BUFFERS; i++) {
+                        free(colorBufferList[i]);
+                    }
+                    for (int i = 0; i < NUM_DEPTH_BUFFERS; i++) {
+                        free(depthBufferList[i]);
+                    }
+                    APC_Release(&cameraHandle);
+                    break;
+                }
+                printf("APC_RegisterUserDepthBuffers success with %d depth buffers\n", NUM_DEPTH_BUFFERS);
+            }
+
+            // Thread-safe statistics
+            std::atomic<int> colorFrames(0);
+            std::atomic<int> depthFrames(0);
+            std::atomic<int> colorErrors(0);
+            std::atomic<int> depthErrors(0);
+            std::atomic<int> recycleErrors(0);
+            std::atomic<int> aeChanges(0);
+            std::atomic<bool> stopThreads(false);
+            std::mutex printMutex;
+
+            auto startTime = std::chrono::steady_clock::now();
+            auto endTime = startTime + std::chrono::seconds(testDurationSec);
+
+            printf("Starting dual-thread streaming test for %d seconds...\n", testDurationSec);
+
+            // Color capture thread - NEW USERPTR (let V4L2 choose buffer)
+            std::thread colorThread([&]() {
+                if (cw == 0 || ch == 0) return;
+                fprintf(stderr, "Color thread: enter (USERPTR mode)\n");
+                int frameCount = 0;
+                while (!stopThreads && std::chrono::steady_clock::now() < endTime) {
+                    unsigned long imageSize;
+                    int serial;
+
+                    // NEW APPROACH: Let V4L2 determine which buffer to use
+                    unsigned char *actualBuffer = nullptr;
+                    int result = APC_GetColorImage(cameraHandle, &devSelInfo, nullptr,  // Ignore old pBuf
+                                                   &imageSize, &serial, depthDataType, &actualBuffer);  // Get actual buffer
+
+                    if (result == APC_OK) {
+                        colorFrames++;
+
+                        // Recycle whatever buffer V4L2 actually provided
+                        int recycleResult = APC_RecycleBuffer(cameraHandle, &devSelInfo, actualBuffer);
+                        if (recycleResult != APC_OK) {
+                            recycleErrors++;
+                            {
+                                std::lock_guard<std::mutex> lock(printMutex);
+                                printf("Color thread: RecycleBuffer failed: %d, buffer=%p\n", recycleResult, actualBuffer);
+                            }
+                        }
+
+                        frameCount++;
+                        if (frameCount % 100 == 0) {
+                            std::lock_guard<std::mutex> lock(printMutex);
+                            printf("Color thread: %d frames captured\n", frameCount);
+                        }
+                    } else {
+                        colorErrors++;
+                        std::lock_guard<std::mutex> lock(printMutex);
+                        printf("Color thread: APC_GetColorImage failed: %d\n", result);
+                    }
+                }
+                fprintf(stderr, "Color thread: end\n");
+            });
+            sleep(2);
+
+            // Depth capture thread - NEW USERPTR (let V4L2 choose buffer)
+            std::thread depthThread([&]() {
+                if (dw == 0 || dh == 0) return;
+                fprintf(stderr, "Depth thread: enter (USERPTR mode)\n");
+
+                int frameCount = 0;
+                while (!stopThreads && std::chrono::steady_clock::now() < endTime) {
+                    unsigned long imageSize;
+                    int serial;
+
+                    // NEW APPROACH: Let V4L2 determine which buffer to use
+                    unsigned char *actualBuffer = nullptr;
+                    int result = APC_GetDepthImage(cameraHandle, &devSelInfo, nullptr,  // Ignore old pBuf
+                                                   &imageSize, &serial, depthDataType, &actualBuffer);  // Get actual buffer
+
+                    if (result == APC_OK) {
+                        depthFrames++;
+
+                        // Recycle whatever buffer V4L2 actually provided
+                        int recycleResult = APC_RecycleDepthBuffer(cameraHandle, &devSelInfo, actualBuffer);
+                        if (recycleResult != APC_OK) {
+                            recycleErrors++;
+                            {
+                                std::lock_guard<std::mutex> lock(printMutex);
+                                printf("Depth thread: RecycleDepthBuffer failed: %d, buffer=%p\n", recycleResult, actualBuffer);
+                            }
+                        }
+
+                        frameCount++;
+                        if (frameCount % 100 == 0) {
+                            std::lock_guard<std::mutex> lock(printMutex);
+                            printf("Depth thread: %d frames captured\n", frameCount);
+                        }
+                    } else {
+                        depthErrors++;
+                        std::lock_guard<std::mutex> lock(printMutex);
+                        printf("Depth thread: APC_GetDepthImage failed: %d\n", result);
+                    }
+                }
+                fprintf(stderr, "Depth thread: end\n");
+            });
+
+            // Auto exposure control thread
+            std::thread autoExposureThread([&]() {
+                long int currentMode = 0;
+                long int targetMode = 0;
+                while (!stopThreads && std::chrono::steady_clock::now() < endTime) {
+                    // Read current auto exposure mode
+                    int getResult = APC_GetCTPropVal(cameraHandle, &devSelInfo, CT_PROPERTY_ID_AUTO_EXPOSURE_MODE_CTRL, &currentMode);
+                    if (getResult == APC_OK) {
+                        // Toggle between modes (assuming 0 and 1 are valid modes)
+                        targetMode = (currentMode == AE_MOD_APERTURE_PRIORITY_MODE) ? AE_MOD_MANUAL_MODE : AE_MOD_APERTURE_PRIORITY_MODE;
+
+                        // Set new mode
+                        int setResult = APC_SetCTPropVal(cameraHandle, &devSelInfo, CT_PROPERTY_ID_AUTO_EXPOSURE_MODE_CTRL, targetMode);
+                        if (setResult == APC_OK) {
+                            aeChanges++;
+                            {
+                                std::lock_guard<std::mutex> lock(printMutex);
+                                printf("AE thread: Changed mode from %d to %d\n", currentMode, targetMode);
+                            }
+                        } else {
+                            std::lock_guard<std::mutex> lock(printMutex);
+                            printf("AE thread: Failed to set AE mode to %d: %d\n", targetMode, setResult);
+                        }
+                    } else {
+                        std::lock_guard<std::mutex> lock(printMutex);
+                        printf("AE thread: Failed to get AE mode: %d\n", getResult);
+                    }
+
+                    // Wait 2 seconds between AE changes
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                }
+            });
+
+            // Wait for completion
+            sleep(testDurationSec);
+            stopThreads = true;
+            colorThread.join();
+            depthThread.join();
+            autoExposureThread.join();
+
+            APC_CloseDevice(cameraHandle, &devSelInfo);
+
+            printf("\n=== Final Statistics ===\n");
+            printf("Color errors: %d\n", colorErrors.load());
+            printf("Depth errors: %d\n", depthErrors.load());
+            printf("Recycle errors: %d\n", recycleErrors.load());
+            printf("AE mode changes: %d\n", aeChanges.load());
+
+            // Cleanup
+            printf("Cleaning up...\n");
+            APC_CloseDevice(cameraHandle, &devSelInfo);
+
+            // Free allocated buffers
+            if (cw > 0 && ch > 0) {
+                for (int i = 0; i < NUM_COLOR_BUFFERS; i++) {
+                    free(colorBufferList[i]);
+                    printf("Freed color buffer %d\n", i);
+                }
+            }
+            if (dw > 0 && dh > 0) {
+                for (int i = 0; i < NUM_DEPTH_BUFFERS; i++) {
+                    free(depthBufferList[i]);
+                    printf("Freed depth buffer %d\n", i);
+                }
+            }
+
+            APC_Release(&cameraHandle);
+            printf("=== Case 111 completed ===\n");
+            return 0;
         }
         case 255:
             close_device();
@@ -5609,6 +6405,7 @@ static int getPointCloudInfo(void *pHandleEYSD, DEVSELINFO *pDevSelInfo, PointCl
         pointCloudInfo->cx2 = pRectifyLogData->NewCamMat2[2];
         pointCloudInfo->cy2 = pRectifyLogData->NewCamMat2[6];
         pointCloudInfo->Tx = -1 * baseline;
+        pointCloudInfo->depthScaleRatio = ratio_Mat;
 
         switch (APCImageType::DepthDataTypeToDepthImageType(depthDataType)) {
             case APCImageType::DEPTH_14BITS: pointCloudInfo->disparity_len = 0; break;
@@ -7143,7 +7940,6 @@ static int TransformDepthDataType(int *nDepthDataType, bool bRectifyData)
         *nDepthDataType += APC_DEPTH_DATA_SCALE_DOWN_MODE_OFFSET;
     }
 
-    //Donkey
     if ((gCameraPID == APC_PID_8036) && (gDepthWidth == 320 && gDepthHeight == 180)) {
         *nDepthDataType += APC_DEPTH_DATA_SCALE_DOWN_MODE_OFFSET;
         if (!IsInterleaveMode()) {
@@ -7151,7 +7947,6 @@ static int TransformDepthDataType(int *nDepthDataType, bool bRectifyData)
         }
     }
 
-    //Donkey
     if ((gCameraPID == APC_PID_80362) && (gDepthWidth == 320 && gDepthHeight == 180)) {
         *nDepthDataType += APC_DEPTH_DATA_SCALE_DOWN_MODE_OFFSET;
         if (!IsInterleaveMode()) {
@@ -8614,4 +9409,202 @@ static int high_low_exchange(int data)
     data_high = (data & 0x00ff) << 8;
     int exchange_data = data_high + data_low;
     return exchange_data;
+}
+
+static void case108_esp936_stress_test(void) {
+    fprintf(stderr, "Case 108 eSP936 Stress Test Start\n");
+    void *cameraHandle = nullptr;
+    DEVSELINFO devSelInfoPath1;
+    devSelInfoPath1.index = 1;
+    DEVSELINFO devSelInfoPathMono;
+    devSelInfoPathMono.index = 2;
+
+    int fps = 30;
+    int cw = 2560, ch = 960;
+    int dw = 1280, dh = 960;
+    int isMjpeg = 0;
+    int depthDataType = 0x18;
+    int run = 0;
+    int frameNumber = 0;
+    bool isInterleave = false;
+    int isSavingFile = false;
+
+    printf("\nPlease input how many times to run open/close device test : \n");
+    scanf("%d", &run);
+    printf("\nPlease input how many received frames to close device each run : \n");
+    scanf("%d", &frameNumber);
+    printf("Choose YUYV:0 MJPEG:1 \n");
+    scanf("%d", &isMjpeg);
+    printf("Path1 width:\n");
+    scanf("%d", &cw);
+    printf("Path1 height:\n");
+    scanf("%d", &ch);
+    printf("Mono width:\n");
+    scanf("%d", &dw);
+    printf("Mono height:\n");
+    scanf("%d", &dh);
+    printf("Choose FPS:\n");
+    scanf("%d", &fps);
+    printf("Choose Depth type D11/Color Only Rectified=24 Z14=25 Color Only=0 Interleave D11=26 Z14=27:\n");
+    scanf("%d", &depthDataType);
+    printf("Saving file in out_img:\n");
+    scanf("%d", &isSavingFile);
+
+    isInterleave = depthDataType == 26 || depthDataType == 27;
+    std::size_t runCount = 0;
+
+    while (runCount < run) {
+        runCount++;
+        fprintf(stderr, "Run %zu\n", runCount);
+        int ret = APC_Init(&cameraHandle, false);
+        fprintf(stderr, "(01) Init device (%d)\n", ret);
+
+        if (!cameraHandle) {
+            fprintf(stderr, "Null handle reason %d\n", ret);
+            return;
+        }
+
+        int deviceCount = APC_GetDeviceNumber(cameraHandle);
+        fprintf(stderr, "Device Count: %d\n", deviceCount);
+        if (deviceCount < 3) { // Need at least 3 devices for eSP936 (main, path1, mono)
+            fprintf(stderr, "eSP936 camera not detected correctly (expected >= 3 devices).\n");
+            APC_Release(&cameraHandle);
+            return;
+        }
+
+        ret = APC_SetDepthDataType(cameraHandle, &devSelInfoPath1, depthDataType);
+        fprintf(stderr, "(01.1) SetDepthDataType Path1 (%d)\n", ret);
+
+
+        ret = APC_SetupBlock(cameraHandle, &devSelInfoPath1, true);
+        fprintf(stderr, "(01.2) SetupBlock Path1 (%d)\n", ret);
+
+        ret = APC_SetupBlock(cameraHandle, &devSelInfoPathMono, true);
+        fprintf(stderr, "(01.3) SetupBlock PathMono (%d)\n", ret);
+
+        ret = APC_EnableInterleave(cameraHandle, &devSelInfoPathMono, isInterleave);
+        fprintf(stderr, "(01.4) Interleave mode setup (%d)\n", ret);
+
+        ret = APC_SetCurrentIRValue(cameraHandle, &devSelInfoPathMono, 3);
+        fprintf(stderr, "(01.5) IR setup as 3 (%d)\n", ret);
+
+        if (cw != 0 && ch != 0) {
+            ret = APC_OpenDevice2(cameraHandle, &devSelInfoPath1, cw, ch, isMjpeg, 0, 0, DEPTH_IMG_NON_TRANSFER, false,
+                                  nullptr, &fps);
+            fprintf(stderr, "(02.1) OpenDevice2 Path1 (%d)\n", ret);
+            if (ret != APC_OK) {
+                fprintf(stderr, "OpenDevice2 Path1 failed\n");
+                APC_Release(&cameraHandle);
+                return;
+            }
+        }
+
+        if (!isInterleave && dw != 0 && dh != 0) {
+            ret = APC_OpenDevice2(cameraHandle, &devSelInfoPathMono, dw, dh, false /*YUYV only*/, 0, 0,
+                                  DEPTH_IMG_NON_TRANSFER, false, nullptr, &fps);
+            fprintf(stderr, "(02.2) OpenDevice2 PathMono (%d)\n", ret);
+            if (ret != APC_OK) {
+                fprintf(stderr, "OpenDevice2 PathMono failed\n");
+                if (cw != 0 && ch != 0) APC_CloseDevice(cameraHandle, &devSelInfoPath1);
+                APC_Release(&cameraHandle);
+                return;
+            }
+        }
+
+        fprintf(stderr, "(03) Frame number each run = (%d)\n", frameNumber);
+
+        std::size_t dropPathOne = 0;
+        std::size_t dropPathMono = 0;
+        std::size_t countPathOne = 0;
+        std::size_t countMono = 0;
+        int64_t lastPathOneSN = -1;
+        int64_t lastPathMonoSN = -1;
+
+        libeys3dsample::FrameCallbackHelper::Callback pathOneCallbackFn([&](const libeys3dsample::Frame *f) {
+            if (lastPathOneSN >= 0 && f->sn - lastPathOneSN > 1) {
+                fprintf(stderr, "[DropFrame-Path1] SN:%d -> %d\n", (int) lastPathOneSN, f->sn);
+                dropPathOne += (f->sn - lastPathOneSN - 1);
+            }
+            std::string fileName(SAVE_FILE_PATH);
+            fileName.append("path1_");
+            fileName.append(std::to_string(f->sn));
+            saveRawFile(fileName.c_str(), (unsigned char *) f->dataVec.data(), f->dataVec.size());
+            fprintf(stderr, "+");
+            lastPathOneSN = f->sn;
+            countPathOne++;
+            return f->status == APC_OK;
+        });
+
+        libeys3dsample::FrameCallbackHelper::Callback pathMonoCallbackFn([&](const libeys3dsample::Frame *f) {
+            if (lastPathMonoSN >= 0 && f->sn - lastPathMonoSN > 1) {
+                fprintf(stderr, "[DropFrame-PathMono] SN:%d -> %d\n", (int) lastPathMonoSN, f->sn);
+                dropPathMono += (f->sn - lastPathMonoSN - 1);
+            }
+            fprintf(stderr, ".");
+            std::string fileName(SAVE_FILE_PATH);
+            fileName.append("mono_");
+            fileName.append(std::to_string(f->sn));
+            saveRawFile(fileName.c_str(), (unsigned char *) f->dataVec.data(), f->dataVec.size());
+            lastPathMonoSN = f->sn;
+            countMono++;
+            return f->status == APC_OK;
+        });
+
+        libeys3dsample::eSP936CallbackHelper *pathOneCallbackHelper = nullptr;
+        libeys3dsample::eSP936CallbackHelper *pathMonoCallbackHelper = nullptr;
+
+        if (cw != 0 && ch != 0) {
+            pathOneCallbackHelper = new libeys3dsample::eSP936CallbackHelper(cameraHandle, devSelInfoPath1, cw, ch, 2,
+                                                                           pathOneCallbackFn);
+            pathOneCallbackHelper->start();
+        }
+
+        // Maybe add a small delay between starting streams if needed
+        sleep(5);
+
+        if (!isInterleave && dw != 0 && dh != 0) {
+            pathMonoCallbackHelper = new libeys3dsample::eSP936CallbackHelper(cameraHandle, devSelInfoPathMono, dw, dh, 2,
+                                                                           pathMonoCallbackFn);
+            pathMonoCallbackHelper->start();
+        }
+
+        while (1) {
+            bool pathOneEnd = (cw == 0 || ch == 0) ? true : countPathOne >= frameNumber;
+            bool pathMonoEnd = (isInterleave || dw == 0 || dh == 0) ? true : countMono >= frameNumber;
+            if (pathOneEnd && pathMonoEnd)
+                break;
+            usleep(10 * 1000); // Sleep 10ms
+        }
+
+        fprintf(stderr, "\nStopping Streams !!\n");
+
+        if (pathOneCallbackHelper) {
+            pathOneCallbackHelper->stop();
+            delete pathOneCallbackHelper;
+            pathOneCallbackHelper = nullptr;
+        }
+        if (pathMonoCallbackHelper) {
+            pathMonoCallbackHelper->stop();
+            delete pathMonoCallbackHelper;
+            pathMonoCallbackHelper = nullptr;
+        }
+
+        fprintf(stderr, "[Result-Run %zu] Path1 Frames:%zu Drops:%zu / PathMono Frames:%zu Drops:%zu\n",
+                runCount, countPathOne, dropPathOne, countMono, dropPathMono);
+        fprintf(stderr, "(04) Get image done\n");
+
+        if (!isInterleave && dw != 0 && dh != 0) {
+            ret = APC_CloseDevice(cameraHandle, &devSelInfoPathMono);
+            fprintf(stderr, "(05.1) CloseDevice PathMono (%d)\n", ret);
+        }
+        if (cw != 0 && ch != 0) {
+            ret = APC_CloseDevice(cameraHandle, &devSelInfoPath1);
+            fprintf(stderr, "(05.2) CloseDevice Path1 (%d)\n", ret);
+        }
+
+        APC_Release(&cameraHandle);
+        fprintf(stderr, "(06) Release device\n");
+        fprintf(stderr, "----------------------------------------\n");
+    }
+    fprintf(stderr, "Case 108 eSP936 Stress Test End\n");
 }

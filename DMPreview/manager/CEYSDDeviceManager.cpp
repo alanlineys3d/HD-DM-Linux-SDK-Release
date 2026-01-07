@@ -3,6 +3,7 @@
 #include "CVideoDeviceModelFactory.h"
 #include "eSPDI.h"
 #include <QDBusInterface>
+#include <iostream>
 #include "CIMUDeviceManager.h"
 
 CEYSDDeviceManager::CEYSDDeviceManager():
@@ -52,14 +53,18 @@ int CEYSDDeviceManager::Reconnect()
     }
 
     std::vector<CVideoDeviceModel *> findDevices;
-    InitEYSD();
+    int initRet = InitEYSD();
 
     CIMUDeviceManager::GetInstance()->Clear();
     CIMUDeviceManager::GetInstance()->Init();
 
-    FindDevices(findDevices);
+    int findRet = FindDevices(findDevices);
 
-    if (findDevices.size() != m_videoDeviceModels.size()) return APC_Init_Fail;
+    if (findDevices.size() != m_videoDeviceModels.size()) {
+         CVideoDeviceModelFactory::ReleaseModels(findDevices);
+         return APC_Init_Fail;
+    }
+
 
     for (CVideoDeviceModel *pTargetModel : m_videoDeviceModels){
         CVideoDeviceModel *pFindModel = nullptr;
@@ -83,7 +88,6 @@ int CEYSDDeviceManager::Reconnect()
     }
 
     CVideoDeviceModelFactory::ReleaseModels(findDevices);
-
     return APC_OK;
 }
 
@@ -119,8 +123,38 @@ int CEYSDDeviceManager::FindDevices(std::vector<CVideoDeviceModel *> &devices)
     int nDevCount = APC_GetDeviceNumber(m_pEYSD);
     int nDevSimpleCount = APC_GetSimpleDeviceNumber(m_pEYSD);
     DEVSELINFO devSelInfo;
-    for (int i = 0; i < nDevCount; i++){
+
+    std::vector<DeviceIndexWithUSBPort> allDeviceIndexAndPort = {
+//            {0, 456888},  // Comments for unit testing
+//            {1, 456888},
+//            {2, 456888},
+//            {4, 456889},
+//            {3, 456889},
+//            {5, 456890},
+//            {6, 456888}
+    };
+
+    std::map<int, int> portToMinDeviceIndex; /* Only open the smallest index device on bus,
+                                              * and adjust the index in the CVideoDeviceModel
+                                              * and its sub-class later */
+
+    for (int i = 0; i < nDevCount; i++) {
         devSelInfo.index = i;
+        DEVINFORMATIONEX infoEX;
+        if (!APC_GetDeviceInfoEx(m_pEYSD, &devSelInfo, &infoEX)) {
+            allDeviceIndexAndPort.push_back({devSelInfo.index, infoEX.wUsbNode});
+        }
+    }
+
+    for (const auto& device : allDeviceIndexAndPort) {
+        if (portToMinDeviceIndex.find(device.port) == portToMinDeviceIndex.end() || // Not found
+            device.deviceIndex < portToMinDeviceIndex[device.port]) { // Found, but current index is smaller
+            portToMinDeviceIndex[device.port] = device.deviceIndex;
+        }
+    }
+
+    for (auto eachPortMapItem : portToMinDeviceIndex) {
+        devSelInfo.index = eachPortMapItem.second;
         CVideoDeviceModel *pDeviceModel = CVideoDeviceModelFactory::CreateVideoDeviceModel(&devSelInfo);
         if (nullptr != pDeviceModel){
             devices.push_back(std::move(pDeviceModel));

@@ -32,7 +32,7 @@ std::map<std::string, int> CRegisterReadWriteController::GetCurrentDeviceMap() {
     std::map<std::string, int> deviceDescriptionMap;
     for(int i = 0; i < deviceSelInfoList.size(); i++) {
         std::stringstream pidString;
-        pidString << "PID_" << std::hex << std::uppercase << deviceInfoList[i].deviceInfomation.wPID;
+        pidString << i << " PID_" << std::hex << std::uppercase << deviceInfoList[i].deviceInfomation.wPID;
         std::string deviceDescriptionString = "";
         deviceDescriptionString.append(pidString.str());
         deviceDescriptionString.append("_");

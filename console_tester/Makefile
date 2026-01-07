@@ -29,7 +29,7 @@ endif
 CFLAGS = -Wall -W -std=c++11
 LFLAGS = -Wall -W 
 LIBS += -lpthread
-OBJECTS = main.o ColorPaletteGenerator.o RegisterSettings.o PlyWriter.o imu8062/IMUData.o imu8062/CIMUModel.o imu8062/CIMUDeviceManager.o
+OBJECTS = CSelfCalibration2Controller.o main.o ColorPaletteGenerator.o RegisterSettings.o PlyWriter.o imu8062/IMUData.o imu8062/CIMUModel.o imu8062/CIMUDeviceManager.o
 
 ifeq ($(CPU), NVIDIA)
 	OBJECTS += hid_udev.o

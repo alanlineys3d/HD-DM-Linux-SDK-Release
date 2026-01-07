@@ -41,7 +41,7 @@ public:
     CSelfcalibrationController *GetSelfcalibrationController(){ return m_pSelfcalibrationController; }
     CSelfCalibration2Controller *GetSelfCalibration2Controller(){ return m_pSelfCalibration2Controller; }
     CSparseModeController *GetSparseModeController(){ return m_pSparseModeController; }
-
+    std::vector<QString> GetStreamResolutionList(CVideoDeviceModel::STREAM_TYPE type);
 
     void EnableRectifyData(bool bEnable);
     int SetDepthDataBits(int nDepthDataBits, bool bRectify);
@@ -117,7 +117,7 @@ private:
     CSelfcalibrationController *m_pSelfcalibrationController;
     CSparseModeController *m_pSparseModeController;
     CSelfCalibration2Controller *m_pSelfCalibration2Controller;
-
+    int SetDepthDataTypeModelAndView(int nPreviewOptionDataBits, const ModeConfig::MODE_CONFIG& currentMode);
 };
 
 #endif // CVIDEODEVICECONTROLLER_H

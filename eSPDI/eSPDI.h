@@ -1023,11 +1023,11 @@ int  APC_OpenDevice(void *pHandleEYSD, PDEVSELINFO pDevSelInfo,
         3. start video capture processes
     \param void *pHandleEYSD	handle
     \param PDEVSELINFO pDevSelInfo	pointer of device select index
-    \param int nEP0Width	width of endpoint1(color) resolution
-    \param int nEP0Height	height of endpoint1(color) resolution
+    \param int nEP0Width	width of endpoint1(color) resolution in eSP876 product. eSP936 color0, color1, mono width.
+    \param int nEP0Height	height of endpoint1(color) resolution in eSP876 product. eSP936 color0, color1, mono height.
     \param bool bEP0MJPG	endpoint1 output is MJPEG ?
-    \param int nEP1Width	width of endpoint2(depth) resolution
-    \param int nEP1Height	height of endpoint2(depth) resolution
+    \param int nEP1Width	width of endpoint2(depth) resolution. eSP936 keep zero.
+    \param int nEP1Height	height of endpoint2(depth) resolution. eSP936 keep zero.
     \param DEPTH_TRANSFER_CTRL dtc	depth image output transfer
         1. default is transferred to color(DEPTH_IMG_COLORFUL_TRANSFER)
             by calling from APC_OpenDevice()
@@ -1135,35 +1135,54 @@ int APC_CloseDeviceEx(void *pHandleEYSD, PDEVSELINFO pDevSelInfo);
         by issuing V4L2's IOCTL to get frame data
     \param void *pHandleEYSD	handle
     \param PDEVSELINFO pDevSelInfo	pointer of device select index
-    \param BYTE *pBuf	buffer to store image data
+    \param BYTE *pBuf	buffer to store image data (ignored in USERPTR mode)
     \param unsigned long int *pImageSize	the actual buffer size getting from device
     \param int *pSerial	the serial number for synchronizing color and depth image
     \param int nDepthDataType	the depth data type, see definition in eSPDI_def.h
+    \param unsigned char **pUserBuf	[USERPTR mode] Returns pointer to user-provided buffer containing image data
+
     \return success: APC_OK, others: see eSPDI_def.h
+
+    \note USERPTR Mode Buffer Management:
+    - When device is opened with IMAGE_USERPTR_MODE, the pUserBuf parameter receives the buffer pointer
+    - The returned buffer pointer in pUserBuf must be recycled using APC_RecycleBuffer() after processing
+    - Application is responsible for timely buffer recycling to maintain continuous frame capture
+    - Each successful APC_GetImage call in USERPTR mode requires a corresponding APC_RecycleBuffer call
 */
 int  APC_GetImage(void *pHandleEYSD, PDEVSELINFO pDevSelInfo,
                         BYTE *pBuf, unsigned long int *pImageSize,
-                        int *pSerial = 0, int nDepthDataType =0);
+                        int *pSerial = 0, int nDepthDataType = 0,
+                        unsigned char **pUserBuf = nullptr);
 
 /*! \fn int APC_GetColorImage(
         void *pHandleEYSD,
         PDEVSELINFO pDevSelInfo,
         BYTE *pBuf,
         unsigned long int *pImageSize,
-        int *pSerial, int nDepthDataType)
+        int *pSerial, int nDepthDataType,
+        unsigned char **pUserBuf)
     \brief get color image
         by issuing V4L2's IOCTL to get frame data
     \param void *pHandleEYSD	handle
     \param PDEVSELINFO pDevSelInfo	pointer of device select index
-    \param BYTE *pBuf	buffer to store image data
+    \param BYTE *pBuf	buffer to store image data (ignored in USERPTR mode)
     \param unsigned long int *pImageSize	the actual buffer size getting from device
     \param int *pSerial	the serial number for synchronizing color and depth image
     \param int nDepthDataType reserved, no used.
+    \param unsigned char **pUserBuf	[USERPTR mode] Returns pointer to user-provided buffer containing color data
+
     \return success: APC_OK, others: see eSPDI_def.h
+
+    \note USERPTR Mode Buffer Management:
+    - When device is opened with IMAGE_USERPTR_MODE, the pUserBuf parameter receives the buffer pointer
+    - The returned buffer pointer in pUserBuf must be recycled using APC_RecycleBuffer() after processing
+    - Application is responsible for timely buffer recycling to maintain continuous frame capture
+    - Each successful APC_GetColorImage call in USERPTR mode requires a corresponding APC_RecycleBuffer call
 */
 int  APC_GetColorImage(void *pHandleEYSD, PDEVSELINFO pDevSelInfo,
                         BYTE *pBuf, unsigned long int *pImageSize,
-                        int *pSerial = 0, int nDepthDataType =0);
+                        int *pSerial = 0, int nDepthDataType = 0,
+                        unsigned char **pUserBuf = nullptr);
 
 
 /*! \fn int APC_GetColorImageWithTimestamp(
@@ -1201,20 +1220,30 @@ int APC_GetColorImageWithTimestamp(
         PDEVSELINFO pDevSelInfo,
         BYTE *pBuf,
         unsigned long int *pImageSize,
-        int *pSerial, int nDepthDataType)
+        int *pSerial, int nDepthDataType,
+        unsigned char **pUserBuf)
     \brief get depth image
         by issuing V4L2's IOCTL to get frame data
     \param void *pHandleEYSD	handle
     \param PDEVSELINFO pDevSelInfo	pointer of device select index
-    \param BYTE *pBuf	buffer to store image data
+    \param BYTE *pBuf	buffer to store image data (ignored in USERPTR mode)
     \param unsigned long int *pImageSize	the actual buffer size getting from device
     \param int *pSerial	the serial number for synchronizing color and depth image
     \param int nDepthDataType	the depth data type, see definition in eSPDI_def.h
+    \param unsigned char **pUserBuf	[USERPTR mode] Returns pointer to user-provided buffer containing depth data
+
     \return success: APC_OK, others: see eSPDI_def.h
+    
+    \note USERPTR Mode Buffer Management:
+    - When device is opened with IMAGE_USERPTR_MODE, the pUserBuf parameter receives the buffer pointer
+    - The returned buffer pointer in pUserBuf must be recycled using APC_RecycleDepthBuffer() after processing
+    - Application is responsible for timely buffer recycling to maintain continuous frame capture
+    - Each successful APC_GetDepthImage call in USERPTR mode requires a corresponding APC_RecycleDepthBuffer call
 */
 int  APC_GetDepthImage(void *pHandleEYSD, PDEVSELINFO pDevSelInfo,
                         BYTE *pBuf, unsigned long int *pImageSize,
-                        int *pSerial = 0, int nDepthDataType =0);
+                        int *pSerial = 0, int nDepthDataType = 0,
+                        unsigned char **pUserBuf = nullptr);
 
 /*! \fn int APC_GetDepthImageWithTimestamp(
         void *pHandleEYSD,
@@ -2664,6 +2693,196 @@ int APC_EncryptMP4(void* pHandleEYSD, PDEVSELINFO pDevSelInfo, const char* filen
     \return success: APC_OK, others:see eSPDI_def.h
 */
 int APC_DecryptMP4(void* pHandleEYSD, PDEVSELINFO pDevSelInfo, const char* filename);
+
+/*!
+    \brief Register user-provided buffers for zero-copy image capture (USERPTR mode only)
+
+    This function registers a list of user-allocated buffers with the V4L2 driver for zero-copy 
+    operation in USERPTR mode. The buffers will be used for color/general image capture, allowing 
+    the application to control memory allocation and achieve optimal performance by eliminating 
+    data copying between driver and application space.
+
+    \param [in] pHandleEYSD SDK handle returned by APC_Init()
+    \param [in] pDevSelInfo Device selection info
+    \param [in] bufferList Array of pointers to user-allocated buffers
+    \param [in] bufferSizes Array of buffer sizes corresponding to each buffer in bufferList
+    \param [in] bufferCount Number of buffers to register (must be > 0)
+
+    \return
+    - APC_OK: Buffers registered successfully and capture started
+    - APC_NullPtr: Invalid parameters (null pointers or bufferCount <= 0)
+    - APC_NoDevice: Device not available or not initialized
+    - APC_RET_BAD_PARAM: Device not opened in USERPTR mode
+    - APC_NotSupport: MIPI cameras do not support USERPTR mode
+    - APC_OPEN_DEVICE_FAIL: V4L2 buffer registration or capture start failed
+
+    \note Prerequisites and Behavior:
+    - Device must be opened with IMAGE_USERPTR_MODE before calling this function
+    - Function automatically starts capture after successful buffer registration
+    - Not supported on MIPI cameras - use standard MMAP mode instead
+    - Buffers must remain valid until APC_UnregisterUserBuffers() is called
+    - Each buffer in bufferList must be properly aligned and sized for image data
+
+    \warning BUFFER ALLOCATION REQUIREMENTS (NEW VALIDATION):
+    - **Page Alignment Required**: All buffers must be aligned to system page boundaries (typically 4KB)
+                                   Use posix_memalign() or aligned_alloc() to ensure proper alignment
+    - **Minimum Buffer Size**: Buffer size must be >= width × height × bytes_per_pixel for the image format
+                               YUV formats: width × height × 2, MJPEG: width × height × 2.
+    - **Memory Accessibility**: All buffer memory must be accessible (not protected/unmapped pages)
+    - **Validation Performed**: Function performs comprehensive validation and will fail with APC_RET_BAD_PARAM
+                                if requirements not met.
+    
+    \warning CRITICAL BUFFER MANAGEMENT:
+    - Application is responsible for buffer memory allocation and lifecycle management
+    - Registered buffers become part of V4L2 driver queue and will be used for capture
+    - Use APC_GetImage() or APC_GetColorImage() to receive captured frames
+    - Each received buffer must be recycled using APC_RecycleBuffer() for continuous operation
+    - Buffers remain registered until explicitly unregistered or device is closed
+
+    \see APC_RegisterUserDepthBuffers for depth-specific buffer registration
+    \see APC_UnregisterUserBuffers to unregister buffers
+*/
+int APC_RegisterUserBuffers(void *pHandleEYSD, PDEVSELINFO pDevSelInfo, void **bufferList, size_t *bufferSizes,
+                            int bufferCount);
+
+/*!
+    \brief Register user-provided buffers for zero-copy depth image capture (USERPTR mode only)
+
+    This function registers a list of user-allocated buffers with the V4L2 driver for zero-copy 
+    depth image capture in USERPTR mode. This function is specifically designed for depth 
+    pipeline buffer management and operates on the depth endpoint (EP1) of the device, allowing 
+    dedicated depth buffer control separate from color image buffers.
+
+    \param [in] pHandleEYSD SDK handle returned by APC_Init()
+    \param [in] pDevSelInfo Device selection info
+    \param [in] bufferList Array of pointers to user-allocated depth buffers
+    \param [in] bufferSizes Array of buffer sizes corresponding to each depth buffer in bufferList
+    \param [in] bufferCount Number of depth buffers to register (must be > 0)
+
+    \return
+    - APC_OK: Depth buffers registered successfully and capture started
+    - APC_NullPtr: Invalid parameters (null pointers, invalid device, or bufferCount <= 0)
+    - APC_NoDevice: Device not available or not initialized
+    - APC_RET_BAD_PARAM: Device not opened in USERPTR mode
+    - APC_NotSupport: MIPI cameras do not support USERPTR mode
+    - APC_OPEN_DEVICE_FAIL: V4L2 buffer registration or capture start failed
+
+    \note Prerequisites and Behavior:
+    - Device must be opened with IMAGE_USERPTR_MODE before calling this function
+    - Function operates on depth endpoint (EP1) - separate from color image pipeline
+    - Function automatically starts depth capture after successful buffer registration
+    - Not supported on MIPI cameras - use standard MMAP mode instead
+    - Depth buffers must remain valid until unregistered or device is closed
+    - Each buffer must be properly sized for depth data format (typically 16-bit per pixel)
+
+    \note DEPTH BUFFER ALLOCATION REQUIREMENTS:
+    To ensure compatibility and prevent system crashes, user-allocated depth buffers must meet:
+
+    **Buffer Allocation Requirements:**
+    - **Page Alignment**: All depth buffers must be aligned to system page boundaries (typically 4KB
+                          use sysconf(_SC_PAGESIZE) checking current system page size)
+    - **Minimum Size**: Each buffer must be at least depth_width × depth_height × 2 bytes (16-bit depth data)
+    - **Memory Accessibility**: All buffer memory must be accessible (not protected/unmapped pages)
+    - **Validation Performed**: Function performs comprehensive validation and will fail with APC_RET_BAD_PARAM
+                                if requirements not met.
+
+    **Example Depth Buffer Allocation:**
+    @code
+    // Get system page size for alignment
+    size_t page_size = sysconf(_SC_PAGESIZE);
+
+    // Calculate required depth buffer size (16-bit depth data)
+    size_t buffer_size = depth_width * depth_height * 2;
+
+    // Round up to page boundary
+    size_t aligned_size = ((buffer_size + page_size - 1) / page_size) * page_size;
+
+    // Allocate page-aligned depth buffer
+    void *depth_buffer = aligned_alloc(page_size, aligned_size);
+    @endcode
+
+    \warning DEPTH BUFFER MANAGEMENT:
+    - Application is responsible for depth buffer memory allocation and lifecycle management
+    - Registered buffers become part of depth V4L2 driver queue and will be used for depth capture
+    - Use APC_GetDepthImage() to receive captured depth frames
+    - Each received depth buffer must be recycled using APC_RecycleDepthBuffer() for continuous operation
+    - Depth buffers remain registered until explicitly unregistered or device is closed
+    - This function manages depth-specific buffers separately from color buffers
+
+    \see APC_GetDepthImage for capturing depth frames
+    \see APC_RecycleDepthBuffer for depth buffer recycling
+*/
+int APC_RegisterUserDepthBuffers(void *pHandleEYSD, PDEVSELINFO pDevSelInfo, void **bufferList, size_t *bufferSizes,
+                                 int bufferCount);
+
+/*!
+    \brief Recycle a user buffer back to V4L2 driver for next capture (USERPTR mode only)
+
+    This function returns a user buffer to the V4L2 driver's queue after the application
+    has finished processing the image data. This enables zero-copy operation by allowing
+    the user to control when buffers are available for reuse by the driver.
+
+    \param [in] pHandleEYSD SDK handle returned by APC_Init()
+    \param [in] pDevSelInfo Device selection info
+    \param [in] bufferPtr Pointer to the user buffer to recycle (same pointer used in APC_Get*Image)
+
+    \return
+    - APC_OK: Buffer recycled successfully
+    - APC_NullPtr: Invalid parameters
+    - APC_NoDevice: Device not available
+    - APC_RET_BAD_PARAM: Buffer not found or device not in USERPTR mode
+    - APC_DEVICE_TIMEOUT: V4L2 operation failed
+
+    \note
+    - Only works when device is opened with IMAGE_USERPTR_MODE
+    - The bufferPtr must be the same pointer passed to APC_Get*Image functions
+
+    \warning BUFFER LIFECYCLE MANAGEMENT:
+    - User application is responsible for calling this function after processing each captured frame
+    - Each buffer obtained from APC_Get*Image functions requires a corresponding APC_RecycleBuffer call
+    - Timely recycling ensures continuous frame capture and optimal system performance
+    - The application controls buffer availability - prompt recycling enables efficient streaming
+    - Best practice: Call APC_RecycleBuffer immediately after frame processing is complete
+    - Buffer ownership: Application owns the buffer until it calls APC_RecycleBuffer to return it
+*/
+int APC_RecycleBuffer(void *pHandleEYSD, PDEVSELINFO pDevSelInfo, void *bufferPtr);
+
+/*!
+    \brief Recycle a user depth buffer back to V4L2 driver for next capture (USERPTR mode only)
+
+    This function returns a user depth buffer to the V4L2 driver's queue after the application
+    has finished processing the depth image data. This function is specifically designed for 
+    depth buffer management in USERPTR mode and provides the same zero-copy operation capabilities 
+    as APC_RecycleBuffer but is dedicated to depth image processing workflows.
+
+    \param [in] pHandleEYSD SDK handle returned by APC_Init()
+    \param [in] pDevSelInfo Device selection info
+    \param [in] bufferPtr Pointer to the user depth buffer to recycle (same pointer used in APC_GetDepthImage)
+
+    \return
+    - APC_OK: Depth buffer recycled successfully
+    - APC_NullPtr: Invalid parameters
+    - APC_NoDevice: Device not available
+    - APC_RET_BAD_PARAM: Buffer not found or device not in USERPTR mode
+    - APC_DEVICE_TIMEOUT: V4L2 operation failed
+
+    \note
+    - Only works when device is opened with IMAGE_USERPTR_MODE
+    - The bufferPtr must be the same pointer returned by APC_GetDepthImage pUserBuf parameter
+    - This function is functionally equivalent to APC_RecycleBuffer but provides semantic clarity for depth workflows
+
+    \warning BUFFER LIFECYCLE MANAGEMENT:
+    - User application is responsible for calling this function after processing each captured depth frame
+    - Each buffer obtained from APC_GetDepthImage requires a corresponding APC_RecycleDepthBuffer call
+    - Timely recycling ensures continuous depth frame capture and optimal system performance
+    - The application controls depth buffer availability - prompt recycling enables efficient depth streaming
+    - Best practice: Call APC_RecycleDepthBuffer immediately after depth frame processing is complete
+    - Buffer ownership: Application owns the depth buffer until it calls APC_RecycleDepthBuffer to return it
+
+    \see APC_RecycleBuffer for color/general buffer recycling
+*/
+int APC_RecycleDepthBuffer(void *pHandleEYSD, PDEVSELINFO pDevSelInfo, void *bufferPtr);
+
 } // end of extern "C" 01
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 

@@ -25,6 +25,7 @@
 #include "CVideoDeviceModel_Grap.h"
 #include "CVideoDeviceModel_8063.h"
 #include "CVideoDeviceModel_8076_8077.h"
+#include <module/CVideoDeviceModel_80363.h>
 #include "CVideoDeviceModel_Iris.h"
 #include "CVideoDeviceModel_IVY3.h"
 #include "CVideoDeviceModel_IVY4.h"
@@ -37,11 +38,13 @@ CVideoDeviceModel *CVideoDeviceModelFactory::CreateVideoDeviceModel(DEVSELINFO *
                                            pDeviceSelfInfo, &deviceInfomation);
 
     CVideoDeviceModel *pModel = nullptr;
+
     if (deviceInfomation.nDevType == OTHERS || deviceInfomation.nDevType == UNKNOWN_DEVICE_TYPE) {
         if (deviceInfomation.strDevName) free(deviceInfomation.strDevName);
         return pModel;
     }
 
+    // Null creation
     switch (deviceInfomation.wPID){
         case APC_PID_8029:
             pModel = new CVideoDeviceModel_8029(pDeviceSelfInfo); break;
@@ -110,7 +113,9 @@ CVideoDeviceModel *CVideoDeviceModelFactory::CreateVideoDeviceModel(DEVSELINFO *
         case APC_PID_GRAP_THERMAL2:
         //-[Thermal device]
         case APC_PID_8038_M1: break;
-
+        case APC_PID_80363IR:
+        case APC_PID_80363C:
+            pModel = new CVideoDeviceModel_80363(pDeviceSelfInfo); break;
         default:
             pModel = new CVideoDeviceModel(pDeviceSelfInfo); break;
     }

@@ -25,7 +25,7 @@
   <td id="projectlogo"><img alt="Logo" src="eYs3D_logo.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">eYs3D Linux SDK
-   &#160;<span id="projectnumber">5.0.1.52</span>
+   &#160;<span id="projectnumber">testTag007</span>
    </div>
   </td>
  </tr>
@@ -308,18 +308,18 @@ int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p
 <tr class="memitem:a9158d00c8ecbc952b076c07f7fa88fb7"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#a9158d00c8ecbc952b076c07f7fa88fb7">APC_CloseDeviceEx</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo)</td></tr>
 <tr class="memdesc:a9158d00c8ecbc952b076c07f7fa88fb7"><td class="mdescLeft">&#160;</td><td class="mdescRight">close device and free resource for warm reset  <a href="#a9158d00c8ecbc952b076c07f7fa88fb7">More...</a><br /></td></tr>
 <tr class="separator:a9158d00c8ecbc952b076c07f7fa88fb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aabc7575da7cdfd61ca72ad653a58a745"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#aabc7575da7cdfd61ca72ad653a58a745">APC_GetImage</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, BYTE *pBuf, unsigned long int *pImageSize, int *pSerial=0, int nDepthDataType=0)</td></tr>
-<tr class="memdesc:aabc7575da7cdfd61ca72ad653a58a745"><td class="mdescLeft">&#160;</td><td class="mdescRight">get color or depth pin image by issuing V4L2's IOCTL to get frame data  <a href="#aabc7575da7cdfd61ca72ad653a58a745">More...</a><br /></td></tr>
-<tr class="separator:aabc7575da7cdfd61ca72ad653a58a745"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af25a1d8b7cc5d267de29f50b6cb28226"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#af25a1d8b7cc5d267de29f50b6cb28226">APC_GetColorImage</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, BYTE *pBuf, unsigned long int *pImageSize, int *pSerial=0, int nDepthDataType=0)</td></tr>
-<tr class="memdesc:af25a1d8b7cc5d267de29f50b6cb28226"><td class="mdescLeft">&#160;</td><td class="mdescRight">get color image by issuing V4L2's IOCTL to get frame data  <a href="#af25a1d8b7cc5d267de29f50b6cb28226">More...</a><br /></td></tr>
-<tr class="separator:af25a1d8b7cc5d267de29f50b6cb28226"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a823f8a3e49185e55b685094529f96ad6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a823f8a3e49185e55b685094529f96ad6"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>APC_GetImage</b> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, BYTE *pBuf, unsigned long int *pImageSize, int *pSerial=0, int nDepthDataType=0, unsigned char **pUserBuf=nullptr)</td></tr>
+<tr class="separator:a823f8a3e49185e55b685094529f96ad6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8cfeeb4c688023f1444feb013eecba3"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#aa8cfeeb4c688023f1444feb013eecba3">APC_GetColorImage</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, BYTE *pBuf, unsigned long int *pImageSize, int *pSerial=0, int nDepthDataType=0, unsigned char **pUserBuf=nullptr)</td></tr>
+<tr class="memdesc:aa8cfeeb4c688023f1444feb013eecba3"><td class="mdescLeft">&#160;</td><td class="mdescRight">get color image by issuing V4L2's IOCTL to get frame data  <a href="#aa8cfeeb4c688023f1444feb013eecba3">More...</a><br /></td></tr>
+<tr class="separator:aa8cfeeb4c688023f1444feb013eecba3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae2c6d1d20deb690868dcc605492b6e7c"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#ae2c6d1d20deb690868dcc605492b6e7c">APC_GetColorImageWithTimestamp</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, BYTE *pBuf, unsigned long int *pImageSize, int *pSerial, int nDepthDataType, int64_t *pcur_tv_sec, int64_t *pcur_tv_usec)</td></tr>
 <tr class="memdesc:ae2c6d1d20deb690868dcc605492b6e7c"><td class="mdescLeft">&#160;</td><td class="mdescRight">get color image by issuing V4L2's IOCTL to get frame data  <a href="#ae2c6d1d20deb690868dcc605492b6e7c">More...</a><br /></td></tr>
 <tr class="separator:ae2c6d1d20deb690868dcc605492b6e7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b8a8284e274b729aeb75b54bd0698e6"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#a4b8a8284e274b729aeb75b54bd0698e6">APC_GetDepthImage</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, BYTE *pBuf, unsigned long int *pImageSize, int *pSerial=0, int nDepthDataType=0)</td></tr>
-<tr class="memdesc:a4b8a8284e274b729aeb75b54bd0698e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">get depth image by issuing V4L2's IOCTL to get frame data  <a href="#a4b8a8284e274b729aeb75b54bd0698e6">More...</a><br /></td></tr>
-<tr class="separator:a4b8a8284e274b729aeb75b54bd0698e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d837bc8054eff22981db43c92e37475"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#a7d837bc8054eff22981db43c92e37475">APC_GetDepthImage</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, BYTE *pBuf, unsigned long int *pImageSize, int *pSerial=0, int nDepthDataType=0, unsigned char **pUserBuf=nullptr)</td></tr>
+<tr class="memdesc:a7d837bc8054eff22981db43c92e37475"><td class="mdescLeft">&#160;</td><td class="mdescRight">get depth image by issuing V4L2's IOCTL to get frame data  <a href="#a7d837bc8054eff22981db43c92e37475">More...</a><br /></td></tr>
+<tr class="separator:a7d837bc8054eff22981db43c92e37475"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aff378882668dc1438c4307a11f37d756"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#aff378882668dc1438c4307a11f37d756">APC_GetDepthImageWithTimestamp</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, BYTE *pBuf, unsigned long int *pImageSize, int *pSerial, int nDepthDataType, int64_t *pcur_tv_sec, int64_t *pcur_tv_usec)</td></tr>
 <tr class="memdesc:aff378882668dc1438c4307a11f37d756"><td class="mdescLeft">&#160;</td><td class="mdescRight">get color image by issuing V4L2's IOCTL to get frame data  <a href="#aff378882668dc1438c4307a11f37d756">More...</a><br /></td></tr>
 <tr class="separator:aff378882668dc1438c4307a11f37d756"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -608,6 +608,18 @@ int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p
 <tr class="memitem:a53ecb2043b2914929d0f4822c6957c5a"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#a53ecb2043b2914929d0f4822c6957c5a">APC_DecryptMP4</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, const char *filename)</td></tr>
 <tr class="memdesc:a53ecb2043b2914929d0f4822c6957c5a"><td class="mdescLeft">&#160;</td><td class="mdescRight">decrypt a H.264 video was generated by <a class="el" href="e_s_p_d_i_8h.html#a498c2190f8f4f32552dbf4f7a135f0e6" title="encrypt a H.264 video ">APC_EncryptMP4()</a>  <a href="#a53ecb2043b2914929d0f4822c6957c5a">More...</a><br /></td></tr>
 <tr class="separator:a53ecb2043b2914929d0f4822c6957c5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac66f6decf538c9c1d42e78e20d9477a9"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#ac66f6decf538c9c1d42e78e20d9477a9">APC_RegisterUserBuffers</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, void **bufferList, size_t *bufferSizes, int bufferCount)</td></tr>
+<tr class="memdesc:ac66f6decf538c9c1d42e78e20d9477a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register user-provided buffers for zero-copy image capture (USERPTR mode only)  <a href="#ac66f6decf538c9c1d42e78e20d9477a9">More...</a><br /></td></tr>
+<tr class="separator:ac66f6decf538c9c1d42e78e20d9477a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba50f83b23737ccc17c06b8ad435ff8c"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#aba50f83b23737ccc17c06b8ad435ff8c">APC_RegisterUserDepthBuffers</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, void **bufferList, size_t *bufferSizes, int bufferCount)</td></tr>
+<tr class="memdesc:aba50f83b23737ccc17c06b8ad435ff8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register user-provided buffers for zero-copy depth image capture (USERPTR mode only)  <a href="#aba50f83b23737ccc17c06b8ad435ff8c">More...</a><br /></td></tr>
+<tr class="separator:aba50f83b23737ccc17c06b8ad435ff8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a45a9ab48ba13d290d24bc8f9a7a7a04d"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#a45a9ab48ba13d290d24bc8f9a7a7a04d">APC_RecycleBuffer</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, void *bufferPtr)</td></tr>
+<tr class="memdesc:a45a9ab48ba13d290d24bc8f9a7a7a04d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Recycle a user buffer back to V4L2 driver for next capture (USERPTR mode only)  <a href="#a45a9ab48ba13d290d24bc8f9a7a7a04d">More...</a><br /></td></tr>
+<tr class="separator:a45a9ab48ba13d290d24bc8f9a7a7a04d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e0c369ecb06aedcf5f85ceb54f679cc"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#a3e0c369ecb06aedcf5f85ceb54f679cc">APC_RecycleDepthBuffer</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, void *bufferPtr)</td></tr>
+<tr class="memdesc:a3e0c369ecb06aedcf5f85ceb54f679cc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Recycle a user depth buffer back to V4L2 driver for next capture (USERPTR mode only)  <a href="#a3e0c369ecb06aedcf5f85ceb54f679cc">More...</a><br /></td></tr>
+<tr class="separator:a3e0c369ecb06aedcf5f85ceb54f679cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3eaee768c5964c055135ff0572200cc0"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#a3eaee768c5964c055135ff0572200cc0">APC_InjectExtraDataToMp4</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, const char *filename, const char *data, int dataLen)</td></tr>
 <tr class="memdesc:a3eaee768c5964c055135ff0572200cc0"><td class="mdescLeft">&#160;</td><td class="mdescRight">APC_InjectExtraDataToMp4.  <a href="#a3eaee768c5964c055135ff0572200cc0">More...</a><br /></td></tr>
 <tr class="separator:a3eaee768c5964c055135ff0572200cc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -3027,7 +3039,7 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>APC_SetMetaDataEventSt
 
 </div>
 </div>
-<a class="anchor" id="af25a1d8b7cc5d267de29f50b6cb28226"></a>
+<a class="anchor" id="aa8cfeeb4c688023f1444feb013eecba3"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -3065,7 +3077,13 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>APC_SetMetaDataEventSt
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>nDepthDataType</em> = <code>0</code>&#160;</td>
+          <td class="paramname"><em>nDepthDataType</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned char **&#160;</td>
+          <td class="paramname"><em>pUserBuf</em> = <code>nullptr</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -3080,14 +3098,22 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>APC_SetMetaDataEventSt
   <table class="params">
     <tr><td class="paramname">void</td><td>*pHandleEYSD handle </td></tr>
     <tr><td class="paramname">PDEVSELINFO</td><td>pDevSelInfo pointer of device select index </td></tr>
-    <tr><td class="paramname">BYTE</td><td>*pBuf buffer to store image data </td></tr>
+    <tr><td class="paramname">BYTE</td><td>*pBuf buffer to store image data (ignored in USERPTR mode) </td></tr>
     <tr><td class="paramname">unsigned</td><td>long int *pImageSize the actual buffer size getting from device </td></tr>
     <tr><td class="paramname">int</td><td>*pSerial the serial number for synchronizing color and depth image </td></tr>
     <tr><td class="paramname">int</td><td>nDepthDataType reserved, no used. </td></tr>
+    <tr><td class="paramname">unsigned</td><td>char **pUserBuf [USERPTR mode] Returns pointer to user-provided buffer containing color data</td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>success: APC_OK, others: see <a class="el" href="e_s_p_d_i__def_8h.html" title="error/data type definitions ">eSPDI_def.h</a> </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>success: APC_OK, others: see <a class="el" href="e_s_p_d_i__def_8h.html" title="error/data type definitions ">eSPDI_def.h</a></dd></dl>
+<dl class="section note"><dt>Note</dt><dd>USERPTR Mode Buffer Management:<ul>
+<li>When device is opened with IMAGE_USERPTR_MODE, the pUserBuf parameter receives the buffer pointer</li>
+<li>The returned buffer pointer in pUserBuf must be recycled using <a class="el" href="e_s_p_d_i_8h.html#a45a9ab48ba13d290d24bc8f9a7a7a04d" title="Recycle a user buffer back to V4L2 driver for next capture (USERPTR mode only) ">APC_RecycleBuffer()</a> after processing</li>
+<li>Application is responsible for timely buffer recycling to maintain continuous frame capture</li>
+<li>Each successful APC_GetColorImage call in USERPTR mode requires a corresponding APC_RecycleBuffer call </li>
+</ul>
+</dd></dl>
 
 </div>
 </div>
@@ -3462,7 +3488,7 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>APC_SetMetaDataEventSt
 
 </div>
 </div>
-<a class="anchor" id="a4b8a8284e274b729aeb75b54bd0698e6"></a>
+<a class="anchor" id="a7d837bc8054eff22981db43c92e37475"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -3500,7 +3526,13 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>APC_SetMetaDataEventSt
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>nDepthDataType</em> = <code>0</code>&#160;</td>
+          <td class="paramname"><em>nDepthDataType</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned char **&#160;</td>
+          <td class="paramname"><em>pUserBuf</em> = <code>nullptr</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -3515,14 +3547,22 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>APC_SetMetaDataEventSt
   <table class="params">
     <tr><td class="paramname">void</td><td>*pHandleEYSD handle </td></tr>
     <tr><td class="paramname">PDEVSELINFO</td><td>pDevSelInfo pointer of device select index </td></tr>
-    <tr><td class="paramname">BYTE</td><td>*pBuf buffer to store image data </td></tr>
+    <tr><td class="paramname">BYTE</td><td>*pBuf buffer to store image data (ignored in USERPTR mode) </td></tr>
     <tr><td class="paramname">unsigned</td><td>long int *pImageSize the actual buffer size getting from device </td></tr>
     <tr><td class="paramname">int</td><td>*pSerial the serial number for synchronizing color and depth image </td></tr>
     <tr><td class="paramname">int</td><td>nDepthDataType the depth data type, see definition in <a class="el" href="e_s_p_d_i__def_8h.html" title="error/data type definitions ">eSPDI_def.h</a> </td></tr>
+    <tr><td class="paramname">unsigned</td><td>char **pUserBuf [USERPTR mode] Returns pointer to user-provided buffer containing depth data</td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>success: APC_OK, others: see <a class="el" href="e_s_p_d_i__def_8h.html" title="error/data type definitions ">eSPDI_def.h</a> </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>success: APC_OK, others: see <a class="el" href="e_s_p_d_i__def_8h.html" title="error/data type definitions ">eSPDI_def.h</a></dd></dl>
+<dl class="section note"><dt>Note</dt><dd>USERPTR Mode Buffer Management:<ul>
+<li>When device is opened with IMAGE_USERPTR_MODE, the pUserBuf parameter receives the buffer pointer</li>
+<li>The returned buffer pointer in pUserBuf must be recycled using <a class="el" href="e_s_p_d_i_8h.html#a3e0c369ecb06aedcf5f85ceb54f679cc" title="Recycle a user depth buffer back to V4L2 driver for next capture (USERPTR mode only) ...">APC_RecycleDepthBuffer()</a> after processing</li>
+<li>Application is responsible for timely buffer recycling to maintain continuous frame capture</li>
+<li>Each successful APC_GetDepthImage call in USERPTR mode requires a corresponding APC_RecycleDepthBuffer call </li>
+</ul>
+</dd></dl>
 
 </div>
 </div>
@@ -4401,70 +4441,6 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>APC_SetMetaDataEventSt
     <tr><td class="paramname">unsigned</td><td>short address register address </td></tr>
     <tr><td class="paramname">unsigned</td><td>short *pValue pointer of value got from register address </td></tr>
     <tr><td class="paramname">int</td><td>flag address and value data length(2 or 1 byte) ie FG_Address_2Byte | FG_Value_2Byte is 2 byte address and 2 byte value #define FG_Address_1Byte 0x01 #define FG_Address_2Byte 0x02 #define FG_Value_1Byte 0x10 #define FG_Value_2Byte 0x20 </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>success: APC_OK, others: see <a class="el" href="e_s_p_d_i__def_8h.html" title="error/data type definitions ">eSPDI_def.h</a> </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="aabc7575da7cdfd61ca72ad653a58a745"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int APC_GetImage </td>
-          <td>(</td>
-          <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>pHandleEYSD</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a>&#160;</td>
-          <td class="paramname"><em>pDevSelInfo</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">BYTE *&#160;</td>
-          <td class="paramname"><em>pBuf</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned long int *&#160;</td>
-          <td class="paramname"><em>pImageSize</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int *&#160;</td>
-          <td class="paramname"><em>pSerial</em> = <code>0</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>nDepthDataType</em> = <code>0</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>get color or depth pin image by issuing V4L2's IOCTL to get frame data </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">void</td><td>*pHandleEYSD handle </td></tr>
-    <tr><td class="paramname">PDEVSELINFO</td><td>pDevSelInfo pointer of device select index </td></tr>
-    <tr><td class="paramname">BYTE</td><td>*pBuf buffer to store image data </td></tr>
-    <tr><td class="paramname">unsigned</td><td>long int *pImageSize the actual buffer size getting from device </td></tr>
-    <tr><td class="paramname">int</td><td>*pSerial the serial number for synchronizing color and depth image </td></tr>
-    <tr><td class="paramname">int</td><td>nDepthDataType the depth data type, see definition in <a class="el" href="e_s_p_d_i__def_8h.html" title="error/data type definitions ">eSPDI_def.h</a> </td></tr>
   </table>
   </dd>
 </dl>
@@ -6941,11 +6917,11 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>APC_SetMetaDataEventSt
   <table class="params">
     <tr><td class="paramname">void</td><td>*pHandleEYSD handle </td></tr>
     <tr><td class="paramname">PDEVSELINFO</td><td>pDevSelInfo pointer of device select index </td></tr>
-    <tr><td class="paramname">int</td><td>nEP0Width width of endpoint1(color) resolution </td></tr>
-    <tr><td class="paramname">int</td><td>nEP0Height height of endpoint1(color) resolution </td></tr>
+    <tr><td class="paramname">int</td><td>nEP0Width width of endpoint1(color) resolution in eSP876 product. eSP936 color0, color1, mono width. </td></tr>
+    <tr><td class="paramname">int</td><td>nEP0Height height of endpoint1(color) resolution in eSP876 product. eSP936 color0, color1, mono height. </td></tr>
     <tr><td class="paramname">bool</td><td>bEP0MJPG endpoint1 output is MJPEG ? </td></tr>
-    <tr><td class="paramname">int</td><td>nEP1Width width of endpoint2(depth) resolution </td></tr>
-    <tr><td class="paramname">int</td><td>nEP1Height height of endpoint2(depth) resolution </td></tr>
+    <tr><td class="paramname">int</td><td>nEP1Width width of endpoint2(depth) resolution. eSP936 keep zero. </td></tr>
+    <tr><td class="paramname">int</td><td>nEP1Height height of endpoint2(depth) resolution. eSP936 keep zero. </td></tr>
     <tr><td class="paramname">DEPTH_TRANSFER_CTRL</td><td>dtc depth image output transfer</td></tr>
   </table>
   </dd>
@@ -7452,6 +7428,138 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>APC_SetMetaDataEventSt
 
 </div>
 </div>
+<a class="anchor" id="a45a9ab48ba13d290d24bc8f9a7a7a04d"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int APC_RecycleBuffer </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>pHandleEYSD</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a>&#160;</td>
+          <td class="paramname"><em>pDevSelInfo</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>bufferPtr</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Recycle a user buffer back to V4L2 driver for next capture (USERPTR mode only) </p>
+<p>This function returns a user buffer to the V4L2 driver's queue after the application has finished processing the image data. This enables zero-copy operation by allowing the user to control when buffers are available for reuse by the driver.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">pHandleEYSD</td><td>SDK handle returned by <a class="el" href="e_s_p_d_i_8h.html#a50fc5a982da16e8f2a1505ad0d32aa1f" title="entry point of EYSD camera SDK including 1.create a CEYSD class for accessing oncming APIs 2...">APC_Init()</a> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">pDevSelInfo</td><td>Device selection info </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">bufferPtr</td><td>Pointer to the user buffer to recycle (same pointer used in APC_Get*Image)</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><ul>
+<li>APC_OK: Buffer recycled successfully</li>
+<li>APC_NullPtr: Invalid parameters</li>
+<li>APC_NoDevice: Device not available</li>
+<li>APC_RET_BAD_PARAM: Buffer not found or device not in USERPTR mode</li>
+<li>APC_DEVICE_TIMEOUT: V4L2 operation failed</li>
+</ul>
+</dd></dl>
+<dl class="section note"><dt>Note</dt><dd><ul>
+<li>Only works when device is opened with IMAGE_USERPTR_MODE</li>
+<li>The bufferPtr must be the same pointer passed to APC_Get*Image functions</li>
+</ul>
+</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>BUFFER LIFECYCLE MANAGEMENT:<ul>
+<li>User application is responsible for calling this function after processing each captured frame</li>
+<li>Each buffer obtained from APC_Get*Image functions requires a corresponding APC_RecycleBuffer call</li>
+<li>Timely recycling ensures continuous frame capture and optimal system performance</li>
+<li>The application controls buffer availability - prompt recycling enables efficient streaming</li>
+<li>Best practice: Call APC_RecycleBuffer immediately after frame processing is complete</li>
+<li>Buffer ownership: Application owns the buffer until it calls APC_RecycleBuffer to return it </li>
+</ul>
+</dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="a3e0c369ecb06aedcf5f85ceb54f679cc"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int APC_RecycleDepthBuffer </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>pHandleEYSD</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a>&#160;</td>
+          <td class="paramname"><em>pDevSelInfo</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>bufferPtr</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Recycle a user depth buffer back to V4L2 driver for next capture (USERPTR mode only) </p>
+<p>This function returns a user depth buffer to the V4L2 driver's queue after the application has finished processing the depth image data. This function is specifically designed for depth buffer management in USERPTR mode and provides the same zero-copy operation capabilities as APC_RecycleBuffer but is dedicated to depth image processing workflows.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">pHandleEYSD</td><td>SDK handle returned by <a class="el" href="e_s_p_d_i_8h.html#a50fc5a982da16e8f2a1505ad0d32aa1f" title="entry point of EYSD camera SDK including 1.create a CEYSD class for accessing oncming APIs 2...">APC_Init()</a> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">pDevSelInfo</td><td>Device selection info </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">bufferPtr</td><td>Pointer to the user depth buffer to recycle (same pointer used in APC_GetDepthImage)</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><ul>
+<li>APC_OK: Depth buffer recycled successfully</li>
+<li>APC_NullPtr: Invalid parameters</li>
+<li>APC_NoDevice: Device not available</li>
+<li>APC_RET_BAD_PARAM: Buffer not found or device not in USERPTR mode</li>
+<li>APC_DEVICE_TIMEOUT: V4L2 operation failed</li>
+</ul>
+</dd></dl>
+<dl class="section note"><dt>Note</dt><dd><ul>
+<li>Only works when device is opened with IMAGE_USERPTR_MODE</li>
+<li>The bufferPtr must be the same pointer returned by APC_GetDepthImage pUserBuf parameter</li>
+<li>This function is functionally equivalent to APC_RecycleBuffer but provides semantic clarity for depth workflows</li>
+</ul>
+</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>BUFFER LIFECYCLE MANAGEMENT:<ul>
+<li>User application is responsible for calling this function after processing each captured depth frame</li>
+<li>Each buffer obtained from APC_GetDepthImage requires a corresponding APC_RecycleDepthBuffer call</li>
+<li>Timely recycling ensures continuous depth frame capture and optimal system performance</li>
+<li>The application controls depth buffer availability - prompt recycling enables efficient depth streaming</li>
+<li>Best practice: Call APC_RecycleDepthBuffer immediately after depth frame processing is complete</li>
+<li>Buffer ownership: Application owns the depth buffer until it calls APC_RecycleDepthBuffer to return it</li>
+</ul>
+</dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="e_s_p_d_i_8h.html#a45a9ab48ba13d290d24bc8f9a7a7a04d" title="Recycle a user buffer back to V4L2 driver for next capture (USERPTR mode only) ">APC_RecycleBuffer</a> for color/general buffer recycling </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="a68b29f4a0036d0f30c424200439d08f5"></a>
 <div class="memitem">
 <div class="memproto">
@@ -7474,6 +7582,195 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>APC_SetMetaDataEventSt
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>success: APC_OK, others: see <a class="el" href="e_s_p_d_i__def_8h.html" title="error/data type definitions ">eSPDI_def.h</a> </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="ac66f6decf538c9c1d42e78e20d9477a9"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int APC_RegisterUserBuffers </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>pHandleEYSD</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a>&#160;</td>
+          <td class="paramname"><em>pDevSelInfo</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void **&#160;</td>
+          <td class="paramname"><em>bufferList</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t *&#160;</td>
+          <td class="paramname"><em>bufferSizes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>bufferCount</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register user-provided buffers for zero-copy image capture (USERPTR mode only) </p>
+<p>This function registers a list of user-allocated buffers with the V4L2 driver for zero-copy operation in USERPTR mode. The buffers will be used for color/general image capture, allowing the application to control memory allocation and achieve optimal performance by eliminating data copying between driver and application space.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">pHandleEYSD</td><td>SDK handle returned by <a class="el" href="e_s_p_d_i_8h.html#a50fc5a982da16e8f2a1505ad0d32aa1f" title="entry point of EYSD camera SDK including 1.create a CEYSD class for accessing oncming APIs 2...">APC_Init()</a> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">pDevSelInfo</td><td>Device selection info </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">bufferList</td><td>Array of pointers to user-allocated buffers </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">bufferSizes</td><td>Array of buffer sizes corresponding to each buffer in bufferList </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">bufferCount</td><td>Number of buffers to register (must be &gt; 0)</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><ul>
+<li>APC_OK: Buffers registered successfully and capture started</li>
+<li>APC_NullPtr: Invalid parameters (null pointers or bufferCount &lt;= 0)</li>
+<li>APC_NoDevice: Device not available or not initialized</li>
+<li>APC_RET_BAD_PARAM: Device not opened in USERPTR mode</li>
+<li>APC_NotSupport: MIPI cameras do not support USERPTR mode</li>
+<li>APC_OPEN_DEVICE_FAIL: V4L2 buffer registration or capture start failed</li>
+</ul>
+</dd></dl>
+<dl class="section note"><dt>Note</dt><dd>Prerequisites and Behavior:<ul>
+<li>Device must be opened with IMAGE_USERPTR_MODE before calling this function</li>
+<li>Function automatically starts capture after successful buffer registration</li>
+<li>Not supported on MIPI cameras - use standard MMAP mode instead</li>
+<li>Buffers must remain valid until APC_UnregisterUserBuffers() is called</li>
+<li>Each buffer in bufferList must be properly aligned and sized for image data</li>
+</ul>
+</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>BUFFER ALLOCATION REQUIREMENTS (NEW VALIDATION):<ul>
+<li><b>Page Alignment Required</b>: All buffers must be aligned to system page boundaries (typically 4KB) Use posix_memalign() or aligned_alloc() to ensure proper alignment</li>
+<li><b>Minimum Buffer Size</b>: Buffer size must be &gt;= width × height × bytes_per_pixel for the image format YUV formats: width × height × 2, MJPEG: width × height × 2.</li>
+<li><b>Memory Accessibility</b>: All buffer memory must be accessible (not protected/unmapped pages)</li>
+<li><b>Validation Performed</b>: Function performs comprehensive validation and will fail with APC_RET_BAD_PARAM if requirements not met.</li>
+</ul>
+</dd>
+<dd>
+CRITICAL BUFFER MANAGEMENT:<ul>
+<li>Application is responsible for buffer memory allocation and lifecycle management</li>
+<li>Registered buffers become part of V4L2 driver queue and will be used for capture</li>
+<li>Use APC_GetImage() or <a class="el" href="e_s_p_d_i_8h.html#aa8cfeeb4c688023f1444feb013eecba3" title="get color image by issuing V4L2&#39;s IOCTL to get frame data ">APC_GetColorImage()</a> to receive captured frames</li>
+<li>Each received buffer must be recycled using <a class="el" href="e_s_p_d_i_8h.html#a45a9ab48ba13d290d24bc8f9a7a7a04d" title="Recycle a user buffer back to V4L2 driver for next capture (USERPTR mode only) ">APC_RecycleBuffer()</a> for continuous operation</li>
+<li>Buffers remain registered until explicitly unregistered or device is closed</li>
+</ul>
+</dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="e_s_p_d_i_8h.html#aba50f83b23737ccc17c06b8ad435ff8c" title="Register user-provided buffers for zero-copy depth image capture (USERPTR mode only) ...">APC_RegisterUserDepthBuffers</a> for depth-specific buffer registration </dd>
+<dd>
+APC_UnregisterUserBuffers to unregister buffers </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="aba50f83b23737ccc17c06b8ad435ff8c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int APC_RegisterUserDepthBuffers </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>pHandleEYSD</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a>&#160;</td>
+          <td class="paramname"><em>pDevSelInfo</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void **&#160;</td>
+          <td class="paramname"><em>bufferList</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t *&#160;</td>
+          <td class="paramname"><em>bufferSizes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>bufferCount</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register user-provided buffers for zero-copy depth image capture (USERPTR mode only) </p>
+<p>This function registers a list of user-allocated buffers with the V4L2 driver for zero-copy depth image capture in USERPTR mode. This function is specifically designed for depth pipeline buffer management and operates on the depth endpoint (EP1) of the device, allowing dedicated depth buffer control separate from color image buffers.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">pHandleEYSD</td><td>SDK handle returned by <a class="el" href="e_s_p_d_i_8h.html#a50fc5a982da16e8f2a1505ad0d32aa1f" title="entry point of EYSD camera SDK including 1.create a CEYSD class for accessing oncming APIs 2...">APC_Init()</a> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">pDevSelInfo</td><td>Device selection info </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">bufferList</td><td>Array of pointers to user-allocated depth buffers </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">bufferSizes</td><td>Array of buffer sizes corresponding to each depth buffer in bufferList </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">bufferCount</td><td>Number of depth buffers to register (must be &gt; 0)</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><ul>
+<li>APC_OK: Depth buffers registered successfully and capture started</li>
+<li>APC_NullPtr: Invalid parameters (null pointers, invalid device, or bufferCount &lt;= 0)</li>
+<li>APC_NoDevice: Device not available or not initialized</li>
+<li>APC_RET_BAD_PARAM: Device not opened in USERPTR mode</li>
+<li>APC_NotSupport: MIPI cameras do not support USERPTR mode</li>
+<li>APC_OPEN_DEVICE_FAIL: V4L2 buffer registration or capture start failed</li>
+</ul>
+</dd></dl>
+<dl class="section note"><dt>Note</dt><dd>Prerequisites and Behavior:<ul>
+<li>Device must be opened with IMAGE_USERPTR_MODE before calling this function</li>
+<li>Function operates on depth endpoint (EP1) - separate from color image pipeline</li>
+<li>Function automatically starts depth capture after successful buffer registration</li>
+<li>Not supported on MIPI cameras - use standard MMAP mode instead</li>
+<li>Depth buffers must remain valid until unregistered or device is closed</li>
+<li>Each buffer must be properly sized for depth data format (typically 16-bit per pixel)</li>
+</ul>
+</dd>
+<dd>
+DEPTH BUFFER ALLOCATION REQUIREMENTS: To ensure compatibility and prevent system crashes, user-allocated depth buffers must meet:</dd></dl>
+<p>Buffer Allocation Requirements:**</p><ul>
+<li><b>Page Alignment</b>: All depth buffers must be aligned to system page boundaries (typically 4KB use sysconf(_SC_PAGESIZE) checking current system page size)</li>
+<li><b>Minimum Size</b>: Each buffer must be at least depth_width × depth_height × 2 bytes (16-bit depth data)</li>
+<li><b>Memory Accessibility</b>: All buffer memory must be accessible (not protected/unmapped pages)</li>
+<li><p class="startli"><b>Validation Performed</b>: Function performs comprehensive validation and will fail with APC_RET_BAD_PARAM if requirements not met.</p>
+<p class="startli">Example Depth Buffer Allocation:** </p><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;// Get system page size for alignment</div><div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;size_t page_size = sysconf(_SC_PAGESIZE);</div><div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;</div><div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;// Calculate required depth buffer size (16-bit depth data)</div><div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;size_t buffer_size = depth_width * depth_height * 2;</div><div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;</div><div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;// Round up to page boundary</div><div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;size_t aligned_size = ((buffer_size + page_size - 1) / page_size) * page_size;</div><div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;</div><div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;// Allocate page-aligned depth buffer</div><div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;void *depth_buffer = aligned_alloc(page_size, aligned_size);</div></div><!-- fragment --></li>
+</ul>
+<dl class="section warning"><dt>Warning</dt><dd>DEPTH BUFFER MANAGEMENT:<ul>
+<li>Application is responsible for depth buffer memory allocation and lifecycle management</li>
+<li>Registered buffers become part of depth V4L2 driver queue and will be used for depth capture</li>
+<li>Use <a class="el" href="e_s_p_d_i_8h.html#a7d837bc8054eff22981db43c92e37475" title="get depth image by issuing V4L2&#39;s IOCTL to get frame data ">APC_GetDepthImage()</a> to receive captured depth frames</li>
+<li>Each received depth buffer must be recycled using <a class="el" href="e_s_p_d_i_8h.html#a3e0c369ecb06aedcf5f85ceb54f679cc" title="Recycle a user depth buffer back to V4L2 driver for next capture (USERPTR mode only) ...">APC_RecycleDepthBuffer()</a> for continuous operation</li>
+<li>Depth buffers remain registered until explicitly unregistered or device is closed</li>
+<li>This function manages depth-specific buffers separately from color buffers</li>
+</ul>
+</dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="e_s_p_d_i_8h.html#a7d837bc8054eff22981db43c92e37475" title="get depth image by issuing V4L2&#39;s IOCTL to get frame data ">APC_GetDepthImage</a> for capturing depth frames </dd>
+<dd>
+<a class="el" href="e_s_p_d_i_8h.html#a3e0c369ecb06aedcf5f85ceb54f679cc" title="Recycle a user depth buffer back to V4L2 driver for next capture (USERPTR mode only) ...">APC_RecycleDepthBuffer</a> for depth buffer recycling </dd></dl>
 
 </div>
 </div>

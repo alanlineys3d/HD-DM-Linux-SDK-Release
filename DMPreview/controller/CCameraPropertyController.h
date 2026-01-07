@@ -42,6 +42,7 @@ public:
     void SetManualDigitalGain(float fDigitalGain);
     QStringList GetManualGainRegisterValueStringList();
     float SetAETarget(int index);
+    bool IsAETargetSupport();
 
 private:
     CVideoDeviceModel *m_pVideoDeviceModel;

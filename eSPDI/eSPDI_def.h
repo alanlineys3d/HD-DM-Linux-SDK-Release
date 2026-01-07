@@ -168,6 +168,7 @@ typedef enum
 
 // register address define +
 #define CHIPID_ADDR         0xf014
+#define GRAPE_CHIPID_ADDR   0xf004
 #define SERIAL_2BIT_ADDR    0xf0fe
 // register address define -
 
@@ -323,6 +324,9 @@ typedef struct tagDEVINFORMATION {
 #define APC_PID_IVY3            0x0192
 #define APC_PID_IVY2_S          0x0195
 #define APC_PID_IVY4            0x0198
+#define APC_PID_80363C          0x0202
+#define APC_PID_80363IR         0x0211
+#define APC_PID_GRAPE           0x0202
 #define APC_PID_GRAP            0x0179
 #define APC_PID_GRAP_K          0x0000
 #define APC_PID_GRAP_SLAVE      0x0279
@@ -384,6 +388,7 @@ typedef enum {
   PUMA,
   KIWI,
   PLUM,
+  GRAPE,
   UNKNOWN_DEVICE_TYPE = 0xffff
 }DEVICE_TYPE;
 // for device type -
@@ -496,7 +501,9 @@ typedef enum{
 	IMAGE_SN_SYNC,
 	// For MIPI Recitfy Data
 	IMAGE_NORECTIFY_DATA = 100,
-	IMAGE_RECTIFY_DATA
+	IMAGE_RECTIFY_DATA,
+	// For USERPTR mode - zero-copy image acquisition
+	IMAGE_USERPTR_MODE = 200
 } CONTROL_MODE;
 
 typedef enum{
@@ -525,6 +532,8 @@ typedef enum {
     APC_SENSOR_TYPE_VD56G3  = 14,
     APC_SENSOR_TYPE_VD66GY  = 15,
     APC_SENSOR_TYPE_SC2356  = 16,
+    APC_SENSOR_TYPE_OG02B10 = 17,
+    APC_SENSOR_TYPE_OG02B1B = 18,
     APC_SENSOR_TYPE_UNKOWN  = 0xffff
 } SENSOR_TYPE_NAME; 
 // for Sensor type name -

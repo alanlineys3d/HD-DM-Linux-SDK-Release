@@ -52,6 +52,10 @@ public:
         m_cameraPropertyItems[type].bSupport = bSupport;
         return APC_OK;
     }
+    int SetCameraPropertyValid(CAMERA_PROPERTY type, bool bValid){
+        m_cameraPropertyItems[type].bValid = bValid;
+        return APC_OK;
+    }
 
     float GetManuelExposureTimeMs();
     void SetManuelExposureTimeMs(float fMs);

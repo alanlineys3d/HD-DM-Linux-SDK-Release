@@ -2,7 +2,7 @@
 #define CEYSDDeviceManager_H
 
 #include <vector>
-
+#include <map>
 class CVideoDeviceModel;
 class CEYSDDeviceManager
 {
@@ -34,6 +34,10 @@ private:
 private:
     void *m_pEYSD;
     bool m_bEnableSDKLog;
+    struct DeviceIndexWithUSBPort {
+        int deviceIndex;
+        int port;
+    };
     std::vector<CVideoDeviceModel *> m_videoDeviceModels;
 };
 

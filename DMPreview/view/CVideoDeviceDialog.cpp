@@ -504,6 +504,8 @@ void CVideoDeviceDialog::on_pushButton_rectify_read_clicked()
     unsigned short nDevType = m_pVideoDeviceModel->GetDeviceInformation()[0].deviceInfomation.nDevType;
     if (PUMA == nDevType)
         sprintf(buf, "../out/RectifyLog/RectfyLog_PUMA_%d.bin", nIndex);
+    else if (GRAPE == nDevType)
+        sprintf(buf, "../out/RectifyLog/RectfyLog_GRAPE_%d.bin", nIndex);
     else
         sprintf(buf, "../out/RectifyLog/RectfyLog_AXES1_%d.bin", nIndex);
 
@@ -515,6 +517,8 @@ void CVideoDeviceDialog::on_pushButton_rectify_read_clicked()
 
     if (PUMA == nDevType)
         sprintf(buf, "../out/RectifyLog/RectfyLog_PUMA_%d.txt", nIndex);
+    else if (GRAPE == nDevType)
+        sprintf(buf, "../out/RectifyLog/RectfyLog_GRAPE_%d.txt", nIndex);
     else
         sprintf(buf, "../out/RectifyLog/RectfyLog_AXES1_%d.txt", nIndex);
 
@@ -616,7 +620,7 @@ void CVideoDeviceDialog::on_pushButton_rectify_read_clicked()
         //
         fprintf(pFile, "nLineBuffers = %d\n",  rectLogData.nLineBuffers);
         //
-        if (PUMA == nDevType) {
+        if (PUMA == nDevType || GRAPE == nDevType) {
             fprintf(pFile, "ReProjectMat = ");
             for (i = 0; i < 16; i++) {
                 fprintf(pFile, "%.8f, ", rectLogData.ReProjectMat[i]);
@@ -626,7 +630,7 @@ void CVideoDeviceDialog::on_pushButton_rectify_read_clicked()
         fclose(pFile);
     }
 
-    if (PUMA == nDevType) {
+    if (PUMA == nDevType || GRAPE == nDevType) {
         QString sRectifyLogInfo;
         sRectifyLogInfo.sprintf("index:%d\n", nIndex);
         sRectifyLogInfo += "ReProjectMat=\n";

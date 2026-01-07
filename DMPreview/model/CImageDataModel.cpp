@@ -440,12 +440,30 @@ void CImageDataModel_Depth::UpdateColorPalette(int nZNear, int nZFar)
                                                    nMinZ, nMaxZ,
                                                    false);
     } else {
+        // Clamp values to valid palette range (0 to 16383)
+        const int paletteSize = 1 << 14;  // 16384
+        const int maxValidIndex = paletteSize - 1;  // 16383
+
+        if (nZNear < 0) nZNear = 0;
+        if (nZNear > maxValidIndex) nZNear = maxValidIndex;
+        if (nZFar < 0) nZFar = 0;
+        if (nZFar > maxValidIndex) nZFar = maxValidIndex;
+
+        // Ensure nZFar > nZNear
+        if (nZFar <= nZNear) {
+            nZFar = nZNear + 1;
+            if (nZFar > maxValidIndex) {
+                nZFar = maxValidIndex;
+                nZNear = maxValidIndex - 1;
+            }
+        }
+
         ColorPaletteGenerator::generatePaletteColor(&m_colorPalette[COLOR_PALETTE_RGB][0],
-                                                    1 << 14, 4,
+                                                    paletteSize, 4,
                                                     nZNear, nZFar,
                                                     true);
         ColorPaletteGenerator::generatePaletteGray(&m_colorPalette[COLOR_PALETTE_GRAY][0],
-                                                   1 << 14, 4,
+                                                   paletteSize, 4,
                                                    nZNear, nZFar,
                                                    false);
     }
@@ -1044,12 +1062,12 @@ CImageDataModel *CImageDataModelFactory::CreateCImageDataModel(CVideoDeviceModel
         case CVideoDeviceModel::STREAM_COLOR_SLAVE:
         case CVideoDeviceModel::STREAM_KOLOR:
         case CVideoDeviceModel::STREAM_KOLOR_SLAVE:
-        case CVideoDeviceModel::STREAM_TRACK:
         //+[Thermal device]
         case CVideoDeviceModel::STREAM_THERMAL:
         //-[Thermal device]
         case CVideoDeviceModel::STREAM_BOTH:
             return new CImageDataModel_Color(type, pVideoDeviceController);
+        case CVideoDeviceModel::STREAM_TRACK:
         case CVideoDeviceModel::STREAM_DEPTH:
             return new CImageDataModel_Depth(type, pVideoDeviceController);
         case CVideoDeviceModel::STREAM_DEPTH_30mm:

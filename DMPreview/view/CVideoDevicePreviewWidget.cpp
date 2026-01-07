@@ -199,7 +199,7 @@ void CVideoDevicePreviewWidget::UpdateStream(CVideoDeviceModel::STREAM_TYPE type
             pEnableStream = ui->checkBox_depth_stream;
             pStreamInfo = ui->comboBox_depth_stream;
             break;
-        case CVideoDeviceModel::STREAM_KOLOR:            
+        case CVideoDeviceModel::STREAM_KOLOR:
             pWidget = ui->widget_kolor_stream;
             pEnableStream = ui->checkBox_kolor_stream;
             pStreamInfo = ui->comboBox_kolor_stream;
@@ -229,11 +229,10 @@ void CVideoDevicePreviewWidget::UpdateStream(CVideoDeviceModel::STREAM_TYPE type
 
     pStreamInfo->blockSignals(true);
     pStreamInfo->clear();
-    std::vector<APC_STREAM_INFO> infoList = m_pVideoDeviceController->GetVideoDeviceModel()->GetStreamInfoList(type);
-    for (APC_STREAM_INFO info : infoList){
-        QString resolution;
-        resolution.sprintf("[%d x %d] %s", info.nWidth, info.nHeight, info.bFormatMJPG ? "MJPG" : "YUV");
-        pStreamInfo->addItem(resolution);
+
+    auto resolutionListQStrings = m_pVideoDeviceController->GetStreamResolutionList(type);
+    for (const auto& it : resolutionListQStrings) {
+        pStreamInfo->addItem(it);
     }
 
     pStreamInfo->setCurrentIndex(m_pVideoDeviceController->GetPreviewOptions()->GetStreamIndex(type));
@@ -405,14 +404,18 @@ void CVideoDevicePreviewWidget::UpdatePlyFilter()
 
 void CVideoDevicePreviewWidget::UpdatePointCloudViewer()
 {
-    bool bPointColudAvaliable = m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_DEPTH);
+    bool bPointColudAvaliable =
+            m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_DEPTH) ||
+            m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_TRACK);
+
     ui->checkBox_point_cloud_viewer->setEnabled(bPointColudAvaliable && ui->checkBox_point_cloud_viewer->isEnabled());
     ui->checkBox_point_cloud_viewer->setChecked(bPointColudAvaliable && m_pVideoDeviceController->GetPreviewOptions()->IsPointCloudViewer());
     ui->comboBox_point_cloud_viewer_format->blockSignals(true);
     ui->comboBox_point_cloud_viewer_format->clear();
 
     bool bColorStreamAvaliable = m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_COLOR) ||
-                                 m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_KOLOR) ;
+            (m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_KOLOR) &&
+             !m_pVideoDeviceController->GetModeConfigOptions()->GetCurrentModeInfo().csModeDesc.startsWith('D'));
     if (bColorStreamAvaliable)
     {
         ui->comboBox_point_cloud_viewer_format->addItem("Color");
@@ -455,7 +458,10 @@ void CVideoDevicePreviewWidget::UpdatePointCloudViewer()
 
 void CVideoDevicePreviewWidget::UpdateDepthOutput()
 {    
-    bool bDepthEnable = m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_DEPTH);
+    bool bDepthEnable =
+            m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_DEPTH) ||
+            m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_TRACK);
+
     ui->comboBox_depth_output->setEnabled(bDepthEnable);
 
     DEPTH_TRANSFER_CTRL depthTransferControl = m_pVideoDeviceController->GetPreviewOptions()->GetDepthDataTransferControl();
@@ -471,9 +477,10 @@ void CVideoDevicePreviewWidget::UpdateDepthOutput()
     }
 }
 
-void CVideoDevicePreviewWidget::UpdateDepthmapBits()
-{    
-    bool bDepthEnable = m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_DEPTH);
+void CVideoDevicePreviewWidget::UpdateDepthmapBits() {
+    bool bDepthEnable = m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_DEPTH) ||
+                        m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_TRACK);
+
     ui->comboBox_depthmap_bits->setEnabled(bDepthEnable);
 
     ui->comboBox_depthmap_bits->blockSignals(true);
@@ -528,7 +535,9 @@ void CVideoDevicePreviewWidget::UpdateDepthmapBits()
 void CVideoDevicePreviewWidget::UpdateZValue()
 {
     bool bDepthStream = m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_DEPTH);
-    ui->groupBox_z_value->setEnabled(ui->groupBox_z_value->isEnabled() && bDepthStream);
+    bool bTrackStream = m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_TRACK);
+    bool isDepthViewEnabled = bDepthStream || bTrackStream;
+    ui->groupBox_z_value->setEnabled(ui->groupBox_z_value->isEnabled() && isDepthViewEnabled);
 
     int nZNear, nZFar;
     m_pVideoDeviceController->GetPreviewOptions()->GetZRange(nZNear, nZFar);
@@ -611,7 +620,9 @@ void CVideoDevicePreviewWidget::UpdateFloodIRLevel()
 
 void CVideoDevicePreviewWidget::UpdateDepthROI()
 {
-    bool bDepthEnable = m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_DEPTH);
+    bool bDepthEnable =
+            m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_DEPTH) ||
+            m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(CVideoDeviceModel::STREAM_TRACK);
     ui->horizontalSlider_depth_roi->setEnabled(bDepthEnable);
 
     int nDepthROIValue = m_pVideoDeviceController->GetPreviewOptions()->GetDepthROI();

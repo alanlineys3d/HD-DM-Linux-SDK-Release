@@ -25,7 +25,7 @@
   <td id="projectlogo"><img alt="Logo" src="eYs3D_logo.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">eYs3D Linux SDK
-   &#160;<span id="projectnumber">5.0.1.52</span>
+   &#160;<span id="projectnumber">testTag007</span>
    </div>
   </td>
  </tr>
@@ -404,6 +404,9 @@ Macros</h2></td></tr>
 <tr class="memitem:a25a6b2f06a96e55942a022b80d8a96da"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a25a6b2f06a96e55942a022b80d8a96da"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>CHIPID_ADDR</b>&#160;&#160;&#160;0xf014</td></tr>
 <tr class="separator:a25a6b2f06a96e55942a022b80d8a96da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc700998bec60881909bdc61c01c45b6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afc700998bec60881909bdc61c01c45b6"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>GRAPE_CHIPID_ADDR</b>&#160;&#160;&#160;0xf004</td></tr>
+<tr class="separator:afc700998bec60881909bdc61c01c45b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6e8ac08f548d7275317079e92f9d08ed"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a6e8ac08f548d7275317079e92f9d08ed"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>SERIAL_2BIT_ADDR</b>&#160;&#160;&#160;0xf0fe</td></tr>
 <tr class="separator:a6e8ac08f548d7275317079e92f9d08ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -764,6 +767,15 @@ Macros</h2></td></tr>
 <tr class="memitem:a6c673ec801aacac42eb86ee69c16c342"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a6c673ec801aacac42eb86ee69c16c342"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>APC_PID_IVY4</b>&#160;&#160;&#160;0x0198</td></tr>
 <tr class="separator:a6c673ec801aacac42eb86ee69c16c342"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa9fa99c1539c5aaa7cc7939f3c3c3aa"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aaa9fa99c1539c5aaa7cc7939f3c3c3aa"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>APC_PID_80363C</b>&#160;&#160;&#160;0x0202</td></tr>
+<tr class="separator:aaa9fa99c1539c5aaa7cc7939f3c3c3aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1df8a73826a5b35a5dd8099d052671b2"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a1df8a73826a5b35a5dd8099d052671b2"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>APC_PID_80363IR</b>&#160;&#160;&#160;0x0211</td></tr>
+<tr class="separator:a1df8a73826a5b35a5dd8099d052671b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a484045d9725bd4dced5b7a3a2411270e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a484045d9725bd4dced5b7a3a2411270e"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>APC_PID_GRAPE</b>&#160;&#160;&#160;0x0202</td></tr>
+<tr class="separator:a484045d9725bd4dced5b7a3a2411270e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8a668ac8d64e8ded30eea4c109a603e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab8a668ac8d64e8ded30eea4c109a603e"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>APC_PID_GRAP</b>&#160;&#160;&#160;0x0179</td></tr>
 <tr class="separator:ab8a668ac8d64e8ded30eea4c109a603e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1121,6 +1133,7 @@ Enumerations</h2></td></tr>
 <b>KIWI</b>, 
 <br />
 &#160;&#160;<b>PLUM</b>, 
+<b>GRAPE</b>, 
 <b>UNKNOWN_DEVICE_TYPE</b> = 0xffff
 <br />
  }</td></tr>
@@ -1167,10 +1180,14 @@ Enumerations</h2></td></tr>
 <br />
  }</td></tr>
 <tr class="separator:a6887d83949e601227935ffa6b14c76c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeb6c30b72b6dd0937e2d45de44322a49"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aeb6c30b72b6dd0937e2d45de44322a49"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><b>CONTROL_MODE</b> { <b>IMAGE_SN_NONSYNC</b> = 0, 
+<tr class="memitem:aeb6c30b72b6dd0937e2d45de44322a49"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aeb6c30b72b6dd0937e2d45de44322a49"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><b>CONTROL_MODE</b> { <br />
+&#160;&#160;<b>IMAGE_SN_NONSYNC</b> = 0, 
 <b>IMAGE_SN_SYNC</b>, 
 <b>IMAGE_NORECTIFY_DATA</b> = 100, 
-<b>IMAGE_RECTIFY_DATA</b>
+<b>IMAGE_RECTIFY_DATA</b>, 
+<br />
+&#160;&#160;<b>IMAGE_USERPTR_MODE</b> = 200
+<br />
  }</td></tr>
 <tr class="separator:aeb6c30b72b6dd0937e2d45de44322a49"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af1a62b16ba92df85219b6bedec8f49cc"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af1a62b16ba92df85219b6bedec8f49cc"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><b>DEPTH_TRANSFER_CTRL</b> { <b>DEPTH_IMG_NON_TRANSFER</b>, 
@@ -1200,6 +1217,8 @@ Enumerations</h2></td></tr>
 <b>APC_SENSOR_TYPE_VD66GY</b> = 15, 
 <br />
 &#160;&#160;<b>APC_SENSOR_TYPE_SC2356</b> = 16, 
+<b>APC_SENSOR_TYPE_OG02B10</b> = 17, 
+<b>APC_SENSOR_TYPE_OG02B1B</b> = 18, 
 <b>APC_SENSOR_TYPE_UNKOWN</b> = 0xffff
 <br />
  }</td></tr>

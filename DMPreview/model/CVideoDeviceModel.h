@@ -224,7 +224,7 @@ public:
 
     virtual int GetRectifyLogData(int nDevIndex, int nRectifyLogIndex, eSPCtrl_RectLogData *pRectifyLogData, STREAM_TYPE depthType = STREAM_DEPTH);
     virtual eSPCtrl_RectLogData &GetRectifyLogData(STREAM_TYPE depthType){ return m_rectifyLogData; }
-
+    virtual DEVSELINFO* GetRectifyDefaultDeviceSelInfo () { return GetDeviceSelInfo()[0]; }
     virtual bool HasSlaveRectifyLogData(){ return false; }
 
     virtual int ModuleSync(){ return APC_OK; }
@@ -258,6 +258,7 @@ public:
     virtual bool PlyFilterSupprot(){ return true; }    
 
     virtual bool IsStreamAvailable();
+    virtual bool IsESP936Series() { return false; }
 
     int StartStreaming();
     virtual int PrepareOpenDevice();
@@ -271,7 +272,7 @@ public:
                                   ImageData colorImageData, ImageData depthImageData);
     virtual int StartFrameGrabber();
 
-    int StopStreaming(bool bRestart = false);
+    virtual int StopStreaming(bool bRestart = false);
     virtual int StopFrameGrabber();
     virtual int StopStreamingTask();
     virtual int CloseDevice();
@@ -312,6 +313,7 @@ public:
     virtual bool IsManualGainSupport(){ return false; }
     virtual bool IsManualGlobalGainSetSupport(){ return true; }
     virtual std::vector<std::string> GetGainRegisterValueStringList() { return std::vector<std::string>(); }
+    virtual bool IsAETargetSupport() { return true; }
 protected:
     CVideoDeviceModel(DEVSELINFO *pDeviceSelfInfo);
     virtual ~CVideoDeviceModel();
@@ -376,6 +378,8 @@ public:
                                           std::vector<unsigned char>& bufColor, int &widthColor, int &heightColor,
                                           int &serialNumber){ return APC_OK; }
     virtual int DefaultVideoMode() { return 0; }
+    virtual void UpdateImageProcessor();
+    virtual bool IsCurrentModeDepthOnly() { return false; }
     /**
      * Read the file index during start streaming, and will not reset after stop streaming.
      * @return File index of eYs3D module, which indicates where we get the calibration table or ZD lookup Table.

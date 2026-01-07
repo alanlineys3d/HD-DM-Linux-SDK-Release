@@ -99,6 +99,7 @@ HEADERS += \
     model/module/CVideoDeviceModel_8029.h \
     model/module/CVideoDeviceModel_8036_8052.h \
     model/module/CVideoDeviceModel_8036.h \
+    model/module/CVideoDeviceModel_80363.h \
     model/module/CVideoDeviceModel_8037.h \
     model/module/CVideoDeviceModel_8038.h \
     model/module/CVideoDeviceModel_8040_8054.h \
@@ -128,6 +129,9 @@ HEADERS += \
     utility/utDisplayMetrics.h \
     utility/utImageProcessingUtility.h \
     utility/ColorPaletteGenerator.h \
+    utility/ColorPaletteConfig.h \
+    utility/inih/ini.h \
+    utility/inih/INIReader.h \
     utility/PlyFilter.h \
     utility/RegisterSettings.h \
     utility/ModeConfig.h \
@@ -204,6 +208,7 @@ SOURCES += \
     model/module/CVideoDeviceModel_8029.cpp \
     model/module/CVideoDeviceModel_8036_8052.cpp \
     model/module/CVideoDeviceModel_8036.cpp \
+    model/module/CVideoDeviceModel_80363.cpp \
     model/module/CVideoDeviceModel_8037.cpp \
     model/module/CVideoDeviceModel_8038.cpp \
     model/module/CVideoDeviceModel_8040_8054.cpp \
@@ -233,6 +238,9 @@ SOURCES += \
     utility/utDisplayMetrics.cpp \
     utility/utImageProcessingUtility.cpp \
     utility/ColorPaletteGenerator.cpp \
+    utility/ColorPaletteConfig.cpp \
+    utility/inih/ini.c \
+    utility/inih/INIReader.cpp \
     utility/PlyFilter.cpp \
     utility/RegisterSettings.cpp \
     utility/ModeConfig.cpp \
