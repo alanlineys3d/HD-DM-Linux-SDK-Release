@@ -81,13 +81,17 @@ std::string CVideoDeviceModel::CopyAllFileToG2() {
 }
 
 int CVideoDeviceModel::CopyG1FileToG2(int fileIndex) {
+    return CopyG1FileToG2WithDevSelInfo(fileIndex, m_deviceSelInfo[0]);
+}
+
+int CVideoDeviceModel::CopyG1FileToG2WithDevSelInfo(int fileIndex, DEVSELINFO *devSelInfo) {
     int resultCode = COPY_RESULT_NONE;
-    if (fileIndex > APC_USER_SETTING_OFFSET) return false;
+    if (!devSelInfo) return resultCode;
+    if (fileIndex > APC_USER_SETTING_OFFSET) return resultCode;
 
     auto bufferYOffset = new BYTE[APC_Y_OFFSET_FILE_SIZE];
     auto bufferYOffsetBackup = new BYTE[APC_Y_OFFSET_FILE_SIZE];
     auto EYSD = CEYSDDeviceManager::GetInstance()->GetEYSD();
-    auto devSelInfo = m_deviceSelInfo[0];
     int actualYOffsetBufLen = 0;
 
     int ret = APC_GetYOffset(EYSD, devSelInfo, bufferYOffset, APC_Y_OFFSET_FILE_SIZE, &actualYOffsetBufLen, fileIndex);
@@ -871,6 +875,16 @@ APCImageType::Value CVideoDeviceModel::GetDepthImageType()
         default:
             return APCImageType::IMAGE_UNKNOWN;
     }
+}
+
+std::vector<CVideoDeviceModel::STREAM_TYPE> CVideoDeviceModel::GetDepthAccuracyStreamTypes()
+{
+    return {
+        STREAM_DEPTH,
+        STREAM_DEPTH_30mm,
+        STREAM_DEPTH_60mm,
+        STREAM_DEPTH_150mm,
+    };
 }
 
 bool CVideoDeviceModel::IsHWPP()

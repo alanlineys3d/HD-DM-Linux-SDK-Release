@@ -18,7 +18,18 @@ CSelfCalibration2Widget::CSelfCalibration2Widget(CVideoDeviceController *pVideoD
     if (controller) {
         connect(controller, &CSelfCalibration2Controller::statusTextChanged, this,
                 &CSelfCalibration2Widget::onStatusTextChanged);
+
+        if (!controller->IsSupported()) {
+            markUnsupportedOnThisDevice();
+        }
     }
+}
+
+void CSelfCalibration2Widget::markUnsupportedOnThisDevice() {
+    ui->push_btn_selfk2_run->setEnabled(false);
+    ui->push_btn_selfk2_reset->setEnabled(false);
+    ui->push_btn_selfk2_write_to_flash->setEnabled(false);
+    ui->text_label_selfK2_status->setText(tr("Not supported on this device"));
 }
 
 CSelfCalibration2Widget::~CSelfCalibration2Widget() {

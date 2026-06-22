@@ -56,7 +56,7 @@ void CVideoDeviceDepthAccuracyWidget::UpdateAccuracyList()
     ui->widget_depth_accuracy_stream->setVisible(typeList.size() > 1);
 
     if (!ui->widget_depth_accuracy_stream->isVisible()) {
-        m_pDepthAccuracyController->SelectDepthAccuracyStreamType(CVideoDeviceModel::STREAM_DEPTH);
+        m_pDepthAccuracyController->SelectDepthAccuracyStreamType(typeList.empty() ? CVideoDeviceModel::STREAM_DEPTH : typeList[0]);
         return;
     }
 
@@ -67,6 +67,7 @@ void CVideoDeviceDepthAccuracyWidget::UpdateAccuracyList()
             QString sStreamName = "";
             switch(streamType){
                 case CVideoDeviceModel::STREAM_DEPTH: sStreamName = "Depth"; break;
+                case CVideoDeviceModel::STREAM_TRACK: sStreamName = "Track"; break;
                 case CVideoDeviceModel::STREAM_DEPTH_30mm: sStreamName = "Depth_30mm"; break;
                 case CVideoDeviceModel::STREAM_DEPTH_60mm: sStreamName = "Depth_60mm"; break;
                 case CVideoDeviceModel::STREAM_DEPTH_150mm: sStreamName = "Depth_150mm"; break;
@@ -137,6 +138,8 @@ void CVideoDeviceDepthAccuracyWidget::on_comboBox_depth_accuracy_stream_currentT
 {
     if (!text.compare("Depth")){
         m_pDepthAccuracyController->SelectDepthAccuracyStreamType(CVideoDeviceModel::STREAM_DEPTH);
+    }else if (!text.compare("Track")){
+        m_pDepthAccuracyController->SelectDepthAccuracyStreamType(CVideoDeviceModel::STREAM_TRACK);
     }else if (!text.compare("Depth_30mm")){
         m_pDepthAccuracyController->SelectDepthAccuracyStreamType(CVideoDeviceModel::STREAM_DEPTH_30mm);
     }else if (!text.compare("Depth_60mm")){

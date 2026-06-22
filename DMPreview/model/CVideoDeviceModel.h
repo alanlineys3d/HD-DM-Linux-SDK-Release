@@ -128,6 +128,9 @@ public:
     virtual bool GetIsConcatenatedColorImage () { return m_bIsLRConcatImage; }
     virtual void SetIsConcatenatedColorImage (bool isLRConcatImage) { m_bIsLRConcatImage = isLRConcatImage; }
     virtual int CopyG1FileToG2(int fileIndex);
+protected:
+    int CopyG1FileToG2WithDevSelInfo(int fileIndex, DEVSELINFO *devSelInfo);
+public:
     virtual std::string CopyAllFileToG2();
     virtual std::string resultCodeToAlertString(int index, int copyResultCode);
     static constexpr int APC_USER_SETTING_OFFSET = 5;
@@ -210,6 +213,7 @@ public:
     virtual unsigned short GetDepthDataType();
     virtual bool IsRectifyData();
     virtual APCImageType::Value GetDepthImageType();
+    virtual std::vector<STREAM_TYPE> GetDepthAccuracyStreamTypes();
 
     virtual double GetCameraFocus(){ return 0.0; }
     virtual double GetCameraFOV(){ return 75.0f; }
@@ -230,6 +234,9 @@ public:
     virtual int ModuleSync(){ return APC_OK; }
     virtual int ModuleSyncReset(){ return APC_OK; }
     virtual bool ModuleSyncSupport(){ return false; }
+    virtual bool GetModuleSyncMasterCapability(){ return false; }
+    virtual int SetModuleSyncForceSync(bool bEnable){ return APC_OK; }
+    virtual int SetModuleSyncTimingCount(bool bEnable){ return APC_OK; }
 
     virtual int FrameSync(){ return APC_OK; }
     virtual bool FrameSyncSupport(){ return false; }

@@ -126,7 +126,10 @@ void CVideoDevicePreviewWidget::UpdateStreamimgComponetState(bool bIsStreaming)
     ui->pushButton_preview->setEnabled(!bIsStreaming);
     ui->widget_mode_config_option->setEnabled(!bIsStreaming);
     ui->checkBox_hw_pp->setEnabled(bIsStreaming);
-    ui->checkBox_master->setEnabled(bIsStreaming);
+    // Note: checkBox_master enabled state is managed by UpdateModuleSync() for 80363
+    if (!m_pVideoDeviceController->GetVideoDeviceModel()->IsESP936Series()) {
+        ui->checkBox_master->setEnabled(bIsStreaming);
+    }
     ui->comboBox_color_resize_rate->setEnabled(!bIsStreaming);
     ui->comboBox_depth_resize_rate->setEnabled(!bIsStreaming);
 }
@@ -366,7 +369,46 @@ void CVideoDevicePreviewWidget::UpdateHWPP()
 
 void CVideoDevicePreviewWidget::UpdateModuleSync()
 {
-    bool bIsModuleSyncSupport = m_pVideoDeviceController->GetVideoDeviceModel()->ModuleSyncSupport();
+    CVideoDeviceModel *pModel = m_pVideoDeviceController->GetVideoDeviceModel();
+
+    // --- 80363 device path ---
+    if (pModel->IsESP936Series()) {
+        bool bModuleSyncSupport = pModel->ModuleSyncSupport();
+        bool bIsModuleSyncEnabled = m_pVideoDeviceController->GetPreviewOptions()->IsModuleSync();
+
+        // checkBox_module_sync: during preview, gray out once checked (cannot uncheck)
+        // If unchecked during preview, stays enabled so user can check it
+        bool bIsStreaming = (CVideoDeviceModel::STREAMING == pModel->GetState());
+        ui->checkBox_module_sync->setVisible(bModuleSyncSupport);
+        if (bModuleSyncSupport) {
+            ui->checkBox_module_sync->blockSignals(true);
+            ui->checkBox_module_sync->setChecked(bIsModuleSyncEnabled);
+            ui->checkBox_module_sync->setEnabled(!(bIsStreaming && bIsModuleSyncEnabled));
+            ui->checkBox_module_sync->blockSignals(false);
+        }
+
+        // checkBox_master: toggleable on/off during preview
+        // - Disabled when module_sync is unchecked (bit[2] unknown)
+        // - After module_sync enabled: read bit[2] to determine master/slave
+        //   Master (bit[2]=1): enabled, can toggle freely
+        //   Slave  (bit[2]=0): stays disabled
+        ui->checkBox_master->setVisible(bModuleSyncSupport);
+        if (bModuleSyncSupport) {
+            bool bCanEnable = false;
+            if (bIsModuleSyncEnabled) {
+                bCanEnable = pModel->GetModuleSyncMasterCapability();
+            }
+            bool bIsMasterChecked = m_pVideoDeviceController->GetPreviewOptions()->IsModuleSyncMaster();
+            ui->checkBox_master->blockSignals(true);
+            ui->checkBox_master->setChecked(bIsMasterChecked);
+            ui->checkBox_master->setEnabled(bCanEnable);
+            ui->checkBox_master->blockSignals(false);
+        }
+        return;
+    }
+
+    // --- Legacy 8053/8059 path (completely unchanged) ---
+    bool bIsModuleSyncSupport = pModel->ModuleSyncSupport();
     ui->checkBox_master->setVisible(bIsModuleSyncSupport);
     ui->checkBox_module_sync->setVisible(bIsModuleSyncSupport);
 
@@ -857,8 +899,7 @@ void CVideoDevicePreviewWidget::on_pushButton_z_value_set_clicked()
     int nZNear = ui->spinBox_z_value_near->value();
     int nZFar = ui->spinBox_z_value_far->value();
 
-    m_pVideoDeviceController->GetPreviewOptions()->SetZRange(nZNear, nZFar);
-    m_pVideoDeviceController->AdjustZRange();
+    m_pVideoDeviceController->SetZRange(nZNear, nZFar);
     UpdateZValue();
 }
 
@@ -892,6 +933,16 @@ void CVideoDevicePreviewWidget::on_checkBox_interleave_mode_stateChanged(int sta
 void CVideoDevicePreviewWidget::on_checkBox_module_sync_stateChanged(int state)
 {
     bool bIsChecked = Qt::Checked == state ? true : false;
+    CVideoDeviceModel *pModel = m_pVideoDeviceController->GetVideoDeviceModel();
+
+    if (pModel->IsESP936Series()) {
+        m_pVideoDeviceController->SetModuleSync(bIsChecked);
+        // Refresh master checkbox: enable/disable based on new module_sync state + bit[2]
+        UpdateModuleSync();
+        return;
+    }
+
+    // Legacy 8053/8059 path (unchanged)
     m_pVideoDeviceController->SetModuleSync(bIsChecked);
 }
 

@@ -304,6 +304,45 @@ int  APC_GetFWRegister(void *pHandleEYSD, PDEVSELINFO pDevSelInfo, unsigned shor
 */
 int  APC_SetFWRegister(void *pHandleEYSD, PDEVSELINFO pDevSelInfo, unsigned short address, unsigned short nValue,  int flag);
 
+/*! \fn int APC_GetModuleSyncCapability(
+        void *pHandleEYSD,
+        PDEVSELINFO pDevSelInfo,
+        BOOL *pbCanBeMaster)
+    \brief Query whether the device has Master capability for Module Sync.
+           Reads FW register 0xF7 bit[2] (R/O) via PATH1.
+    \param pHandleEYSD     the pointer to the initialized ApcDI SDK instance
+    \param pDevSelInfo       pointer of device select index (color path 1)
+    \param pbCanBeMaster     output: true if bit[2] == 1 (master detected by cable)
+    \return success: APC_OK, others: see eSPDI_def.h
+*/
+int APC_GetModuleSyncCapability(void *pHandleEYSD, PDEVSELINFO pDevSelInfo, bool *pbCanBeMaster);
+
+/*! \fn int APC_SetModuleSyncForceSync(
+        void *pHandleEYSD,
+        PDEVSELINFO pDevSelInfo,
+        bool bEnable)
+    \brief Enable or disable Force Sync Master mode for Module Sync.
+           Controls FW register 0xF7 bit[1] via PATH1.
+    \param pHandleEYSD     the pointer to the initialized ApcDI SDK instance
+    \param pDevSelInfo       pointer of device select index (color path 1)
+    \param bEnable           true: set bit[1]=1 (force sync); false: clear bit[1]
+    \return success: APC_OK, others: see eSPDI_def.h
+*/
+int APC_SetModuleSyncForceSync(void *pHandleEYSD, PDEVSELINFO pDevSelInfo, bool bEnable);
+
+/*! \fn int APC_SetModuleSyncTimingCountEnable(
+        void *pHandleEYSD,
+        PDEVSELINFO pDevSelInfo,
+        bool bEnable)
+    \brief Enable or disable Timing Count for Module Sync on a module.
+           Controls FW register 0xF7 bit[0] via PATH1.
+    \param pHandleEYSD     the pointer to the initialized ApcDI SDK instance
+    \param pDevSelInfo       pointer of device select index (color path 1)
+    \param bEnable           true: set bit[0]=1 (enable timing count); false: clear bit[0]
+    \return success: APC_OK, others: see eSPDI_def.h
+*/
+int APC_SetModuleSyncTimingCountEnable(void *pHandleEYSD, PDEVSELINFO pDevSelInfo, bool bEnable);
+
 /*! \fn int APC_SetRootCipher(
         void *pHandleEYSD,
         PDEVSELINFO pDevSelInfo,

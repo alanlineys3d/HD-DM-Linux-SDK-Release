@@ -157,6 +157,8 @@ void CVideoDeviceController::EnableRectifyData(bool bEnable)
  */
 int CVideoDeviceController::SetDepthDataTypeModelAndView(int nPreviewOptionDataBits,
                                                          const ModeConfig::MODE_CONFIG& currentMode) {
+    // FW001 version: Fallback constants for legacy devices without database video mode values
+    // Uses hardcoded base values (0x18, 0x19) with interleave offset calculation
     constexpr int kInterleavedModeOffset = 0x02;
     constexpr int kD11BaseVideoMode = 0x18;
     constexpr int kD14BaseVideoMode = 0x19;
@@ -167,15 +169,36 @@ int CVideoDeviceController::SetDepthDataTypeModelAndView(int nPreviewOptionDataB
         return m_pVideoDeviceModel->SetDepthDataType(depthDataType);
     }
 
+    // Try to use database video mode values first (for YX80363 and newer devices)
+    // When useDbValue == true: Use Video_Mode_D11_ColorOnly/Video_Mode_Z14 from database directly
+    // When useDbValue == false: FW001 version fallback - use hardcoded values with offset calculation
+    bool useDbValue = false;
     switch (nPreviewOptionDataBits) {
-        case 11: depthDataType = kD11BaseVideoMode; break;
-        case 14: depthDataType = kD14BaseVideoMode; break;
-        case 0 : depthDataType = kD11BaseVideoMode; break;
+        case 11:
+        case 0:
+            if (currentMode.videoModeD11OrColorOnly != 0xff) {
+                depthDataType = currentMode.videoModeD11OrColorOnly;
+                useDbValue = true;
+            } else {
+                // FW001 version: use legacy hardcoded value
+                depthDataType = kD11BaseVideoMode;
+            }
+            break;
+        case 14:
+            if (currentMode.videoModeZ14 != 0xff) {
+                depthDataType = currentMode.videoModeZ14;
+                useDbValue = true;
+            } else {
+                // FW001 version: use legacy hardcoded value
+                depthDataType = kD14BaseVideoMode;
+            }
+            break;
         default:
             return APC_NotSupport;
     }
 
-    if (currentMode.iInterLeaveModeFPS != 0) {
+    // FW001 version only: Apply interleave offset when not using database values
+    if (!useDbValue && currentMode.iInterLeaveModeFPS != 0) {
         depthDataType += kInterleavedModeOffset;
     }
 
@@ -225,10 +248,16 @@ int CVideoDeviceController::SetDepthDataBits(int nDepthDataBits, bool bRectify)
 int CVideoDeviceController::SetDepthDataType(int depthDataType) {
     if (GetVideoDeviceModel()->IsESP936Series()) {
         switch (depthDataType) {
+            // Legacy video modes (0x18-0x1B)
             case 0x18: // D11 Non-Interleave
             case 0x19: // D14 Non-Interleave
             case 0x1A: // D11 Interleave (0x18 + 0x02)
             case 0x1B: // D14 Interleave (0x19 + 0x02)
+            // New video modes for YX80363 (0x48-0x4B)
+            case 0x48: // D11 Interleave
+            case 0x49: // D14 Interleave
+            case 0x4A: // D11 Non-Interleave
+            case 0x4B: // D14 Non-Interleave
             case 0x00: // Allow setting to 0 (Non-rectified Mode)
                 break;
             default:
@@ -284,7 +313,7 @@ int CVideoDeviceController::DoSnapShot(bool bAsync)
         CThreadWorkerManage::GetInstance()->AddTask(pInfo);
         return APC_OK;
     }
-
+    static const unsigned int waitIRTriggeredUs = 2000 * 1000;
     unsigned short nIRValue =  GetVideoDeviceModel()->GetIRValue();
     bool bNeedResetIR = 0 != nIRValue && !m_pVideoDeviceModel->IsInterleaveMode();
     if (APC_PID_HYPATIA == m_pVideoDeviceModel->GetDeviceInformation()[0].deviceInfomation.wPID)
@@ -293,7 +322,7 @@ int CVideoDeviceController::DoSnapShot(bool bAsync)
     }
     if (bNeedResetIR){
         SetIRLevel(0);
-        usleep(1000 * 1000);
+        usleep(waitIRTriggeredUs);
     }
 
     unsigned short nColorWidth, nColorHeight;
@@ -323,7 +352,7 @@ int CVideoDeviceController::DoSnapShot(bool bAsync)
 
     if (bNeedResetIR){
         SetIRLevel(nIRValue);
-        usleep(1000 * 1000);
+        usleep(waitIRTriggeredUs);
     }
 
     CVideoDeviceModel::STREAM_TYPE depthTypes[] = {
@@ -606,16 +635,22 @@ int CVideoDeviceController::SelectModeConfigIndex(int nIndex)
 int CVideoDeviceController::SetModuleSync(bool bModuleSync)
 {
     GetPreviewOptions()->EnableModuleSync(bModuleSync);
+    if (GetVideoDeviceModel()->IsESP936Series()) {
+        return GetVideoDeviceModel()->SetModuleSyncTimingCount(bModuleSync);
+    }
+    // Legacy 8059 path
     if (bModuleSync) GetVideoDeviceModel()->ModuleSync();
-
     return APC_OK;
 }
 
 int CVideoDeviceController::SetModuleSyncMaster(bool bMaster)
 {
     GetPreviewOptions()->SetModuleSyncMaster(bMaster);
+    if (GetVideoDeviceModel()->IsESP936Series()) {
+        return GetVideoDeviceModel()->SetModuleSyncForceSync(bMaster);
+    }
+    // Legacy 8059 path
     if (bMaster) GetVideoDeviceModel()->ModuleSyncReset();
-
     return APC_OK;
 }
 
@@ -629,23 +664,8 @@ int CVideoDeviceController::SetZRange(int nZNear, int nZFar)
 
 int CVideoDeviceController::AdjustZRange()
 {
-    int nZNear, nZFar;
-    GetPreviewOptions()->GetZRange(nZNear, nZFar);
-
-    // Use the configured DefaultZRange as minimum
-    // This respects INI config overrides - if config says zNear=150, minimum should be 150
-    // For cameras without config, DefaultZRange.zNear equals ZDTable minimum
-    int nDefaultZNear, nDefaultZFar;
-    GetPreviewOptions()->GetDefaultZRange(nDefaultZNear, nDefaultZFar);
-
-    // Ensure minimum is at least ZDTable minimum AND configured minimum
-    int nMinZNear = std::max((int)m_pVideoDeviceModel->GetZDTableInfo()->nZNear, nDefaultZNear);
-    nZNear = std::max(nZNear, nMinZNear);
-
-    GetPreviewOptions()->SetZRange(nZNear, nZFar);
-
+    // After RM9999 refactor: clamping moved to SetZRange(); this refreshes the color palette only.
     GetControlView()->UpdateColorPalette();
-
     return APC_OK;
 }
 

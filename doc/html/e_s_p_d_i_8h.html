@@ -25,7 +25,7 @@
   <td id="projectlogo"><img alt="Logo" src="eYs3D_logo.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">eYs3D Linux SDK
-   &#160;<span id="projectnumber">testTag1.1.0</span>
+   &#160;<span id="projectnumber">5.1.0.6</span>
    </div>
   </td>
  </tr>
@@ -181,6 +181,15 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>APC_SetPixelFormat</b>
 <tr class="memitem:ab7ee0aa5efbf2643c2ed60f3d297fac1"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#ab7ee0aa5efbf2643c2ed60f3d297fac1">APC_SetFWRegister</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, unsigned short address, unsigned short nValue, int flag)</td></tr>
 <tr class="memdesc:ab7ee0aa5efbf2643c2ed60f3d297fac1"><td class="mdescLeft">&#160;</td><td class="mdescRight">set firmware register value  <a href="#ab7ee0aa5efbf2643c2ed60f3d297fac1">More...</a><br /></td></tr>
 <tr class="separator:ab7ee0aa5efbf2643c2ed60f3d297fac1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a60abbe0cf3a1462abebac97ebcf79835"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a60abbe0cf3a1462abebac97ebcf79835"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>APC_GetModuleSyncCapability</b> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, bool *pbCanBeMaster)</td></tr>
+<tr class="separator:a60abbe0cf3a1462abebac97ebcf79835"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa9808693c35d0ec8eb9e10dfb18fd182"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#aa9808693c35d0ec8eb9e10dfb18fd182">APC_SetModuleSyncForceSync</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, bool bEnable)</td></tr>
+<tr class="memdesc:aa9808693c35d0ec8eb9e10dfb18fd182"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable or disable Force Sync Master mode for Module Sync. Controls FW register 0xF7 bit[1] via PATH1.  <a href="#aa9808693c35d0ec8eb9e10dfb18fd182">More...</a><br /></td></tr>
+<tr class="separator:aa9808693c35d0ec8eb9e10dfb18fd182"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e18576324807aa80139220799383cc9"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#a2e18576324807aa80139220799383cc9">APC_SetModuleSyncTimingCountEnable</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, bool bEnable)</td></tr>
+<tr class="memdesc:a2e18576324807aa80139220799383cc9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable or disable Timing Count for Module Sync on a module. Controls FW register 0xF7 bit[0] via PATH1.  <a href="#a2e18576324807aa80139220799383cc9">More...</a><br /></td></tr>
+<tr class="separator:a2e18576324807aa80139220799383cc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab07e43c571c9524d3e2da7a9636bc4d2"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="e_s_p_d_i_8h.html#ab07e43c571c9524d3e2da7a9636bc4d2">APC_SetRootCipher</a> (void *pHandleEYSD, <a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a> pDevSelInfo, const char *cipher)</td></tr>
 <tr class="memdesc:ab07e43c571c9524d3e2da7a9636bc4d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">enter root cipher  <a href="#ab07e43c571c9524d3e2da7a9636bc4d2">More...</a><br /></td></tr>
 <tr class="separator:ab07e43c571c9524d3e2da7a9636bc4d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -9573,6 +9582,92 @@ DEPTH BUFFER ALLOCATION REQUIREMENTS: To ensure compatibility and prevent system
     <tr><td class="paramname">int</td><td>BufferLength buffer length, must be 4096 </td></tr>
     <tr><td class="paramname">int</td><td>*pActualLength always return 4096 </td></tr>
     <tr><td class="paramname">int</td><td>index index to identify log data for corresponding depth </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>success: APC_OK, others: see <a class="el" href="e_s_p_d_i__def_8h.html" title="error/data type definitions ">eSPDI_def.h</a> </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="aa9808693c35d0ec8eb9e10dfb18fd182"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int APC_SetModuleSyncForceSync </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>pHandleEYSD</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a>&#160;</td>
+          <td class="paramname"><em>pDevSelInfo</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>bEnable</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Enable or disable Force Sync Master mode for Module Sync. Controls FW register 0xF7 bit[1] via PATH1. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">pHandleEYSD</td><td>the pointer to the initialized ApcDI SDK instance </td></tr>
+    <tr><td class="paramname">pDevSelInfo</td><td>pointer of device select index (color path 1) </td></tr>
+    <tr><td class="paramname">bEnable</td><td>true: set bit[1]=1 (force sync); false: clear bit[1] </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>success: APC_OK, others: see <a class="el" href="e_s_p_d_i__def_8h.html" title="error/data type definitions ">eSPDI_def.h</a> </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="a2e18576324807aa80139220799383cc9"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int APC_SetModuleSyncTimingCountEnable </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>pHandleEYSD</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structtag_d_e_v_s_e_l.html">PDEVSELINFO</a>&#160;</td>
+          <td class="paramname"><em>pDevSelInfo</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>bEnable</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Enable or disable Timing Count for Module Sync on a module. Controls FW register 0xF7 bit[0] via PATH1. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">pHandleEYSD</td><td>the pointer to the initialized ApcDI SDK instance </td></tr>
+    <tr><td class="paramname">pDevSelInfo</td><td>pointer of device select index (color path 1) </td></tr>
+    <tr><td class="paramname">bEnable</td><td>true: set bit[0]=1 (enable timing count); false: clear bit[0] </td></tr>
   </table>
   </dd>
 </dl>

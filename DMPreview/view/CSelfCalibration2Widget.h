@@ -37,6 +37,7 @@ private:
     CVideoDeviceController *m_pVideoDeviceController;
     void setUIResetState();
     void setUIRunningState();
+    void markUnsupportedOnThisDevice();
 };
 
 #endif // CSELFCALIBRATION2WIDGET_H

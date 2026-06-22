@@ -14,16 +14,11 @@ m_fGroundTruthDistanceMM(0.0f)
 
 std::vector<CVideoDeviceModel::STREAM_TYPE> CDepthAccuracyController::GetDepthAccuracyList()
 {
-    CVideoDeviceModel::STREAM_TYPE depthType[] = {
-                                                    CVideoDeviceModel::STREAM_DEPTH,
-                                                    CVideoDeviceModel::STREAM_DEPTH_30mm,
-                                                    CVideoDeviceModel::STREAM_DEPTH_60mm,
-                                                    CVideoDeviceModel::STREAM_DEPTH_150mm,
-                                                    /*CVideoDeviceModel::STREAM_DEPTH_FUSION,*/
-                                                  };
+    std::vector<CVideoDeviceModel::STREAM_TYPE> depthTypes =
+        m_pVideoDeviceController->GetVideoDeviceModel()->GetDepthAccuracyStreamTypes();
 
     std::vector<CVideoDeviceModel::STREAM_TYPE> accuracyDepthList;
-    for (CVideoDeviceModel::STREAM_TYPE type : depthType){
+    for (CVideoDeviceModel::STREAM_TYPE type : depthTypes){
         if (m_pVideoDeviceController->GetControlView()->GetPreviewImageData(type)){
             accuracyDepthList.push_back(type);
         }
@@ -34,15 +29,11 @@ std::vector<CVideoDeviceModel::STREAM_TYPE> CDepthAccuracyController::GetDepthAc
 
 bool CDepthAccuracyController::IsValid()
 {
-    CVideoDeviceModel::STREAM_TYPE depthType[] = {
-                                                    CVideoDeviceModel::STREAM_DEPTH,
-                                                    CVideoDeviceModel::STREAM_DEPTH_30mm,
-                                                    CVideoDeviceModel::STREAM_DEPTH_60mm,
-                                                    CVideoDeviceModel::STREAM_DEPTH_150mm,
-                                                    /*CVideoDeviceModel::STREAM_DEPTH_FUSION,*/
-                                                  };
+    std::vector<CVideoDeviceModel::STREAM_TYPE> depthTypes =
+        m_pVideoDeviceController->GetVideoDeviceModel()->GetDepthAccuracyStreamTypes();
+
     bool bValid = false;
-    for (CVideoDeviceModel::STREAM_TYPE type : depthType){
+    for (CVideoDeviceModel::STREAM_TYPE type : depthTypes){
         if (m_pVideoDeviceController->GetControlView()->GetPreviewImageData(type)) {
             bValid = true;
             break;

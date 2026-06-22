@@ -132,17 +132,18 @@ int CVideoDeviceModel_80363::StartStreamingTask(){
         // Store previous values to restore them later
         m_bPrevLowLightValue = m_cameraPropertyModel[0]->GetCameraProperty(CCameraPropertyModel::LOW_LIGHT_COMPENSATION).nValue;
         m_cameraPropertyModel[0]->SetCameraPropertyValue(CCameraPropertyModel::LOW_LIGHT_COMPENSATION, 0);
-        
+
         // Instead of setting "support" to false (which hides the UI element),
         // set "valid" to false (which grays out the UI element while keeping it visible)
-        
+
         // Gray out camera properties for interleave mode
         m_cameraPropertyModel[0]->SetCameraPropertyValid(CCameraPropertyModel::LOW_LIGHT_COMPENSATION, false);
         m_cameraPropertyModel[0]->SetCameraPropertyValid(CCameraPropertyModel::AUTO_WHITE_BLANCE, false);
         m_cameraPropertyModel[0]->SetCameraPropertyValid(CCameraPropertyModel::WHITE_BLANCE_TEMPERATURE, false);
         m_cameraPropertyModel[0]->SetCameraPropertyValid(CCameraPropertyModel::AUTO_EXPOSURE, false);
         m_cameraPropertyModel[0]->SetCameraPropertyValid(CCameraPropertyModel::EXPOSURE_TIME, false);
-        
+        m_cameraPropertyModel[0]->SetCameraPropertyValid(CCameraPropertyModel::LIGHT_SOURCE, false);
+
         return ret;
     }
 
@@ -169,6 +170,17 @@ bool CVideoDeviceModel_80363::IsRectifyData() {
     return false;
 }
 
+std::vector<CVideoDeviceModel::STREAM_TYPE> CVideoDeviceModel_80363::GetDepthAccuracyStreamTypes()
+{
+    // 80363 (eSP936/ORANGE) uses STREAM_TRACK on the mono path as its depth window.
+    // Include STREAM_TRACK for depth accuracy when the track stream is available.
+    std::vector<STREAM_TYPE> types = CVideoDeviceModel::GetDepthAccuracyStreamTypes();
+    if (IsStreamSupport(STREAM_TRACK)) {
+        types.insert(types.begin(), STREAM_TRACK);
+    }
+    return types;
+}
+
 bool CVideoDeviceModel_80363::IsStreamSupport(STREAM_TYPE type)
 {
     switch (type){
@@ -176,7 +188,7 @@ bool CVideoDeviceModel_80363::IsStreamSupport(STREAM_TYPE type)
         case STREAM_DEPTH:
         case STREAM_KOLOR:
         case STREAM_TRACK:
-            return !GetStreamInfoList(type).empty();;
+            return !GetStreamInfoList(type).empty();
         default:
             return false;
     }
@@ -209,6 +221,43 @@ APCImageType::Value CVideoDeviceModel_80363::GetDepthImageType() {
 
 bool CVideoDeviceModel_80363::IsESP936Series() {
     return true;
+}
+
+bool CVideoDeviceModel_80363::ModuleSyncSupport()
+{
+    if (IsInterleaveMode()) return false;
+
+    bool bKolorStream = m_pVideoDeviceController->GetPreviewOptions()->IsStreamEnable(STREAM_KOLOR);
+    if (bKolorStream && m_imageData[STREAM_KOLOR].bMJPG) return false;
+
+    return true;
+}
+
+bool CVideoDeviceModel_80363::GetModuleSyncMasterCapability()
+{
+    void *pEYSDI = CEYSDDeviceManager::GetInstance()->GetEYSD();
+    bool bCanBeMaster = false;
+    int ret = APC_GetModuleSyncCapability(pEYSDI, m_deviceSelInfo[INDEX_COLOR_PATH1], &bCanBeMaster);
+    if (ret != APC_OK) return false;
+    return bCanBeMaster;
+}
+
+int CVideoDeviceModel_80363::ModuleSync()
+{
+    void *pEYSDI = CEYSDDeviceManager::GetInstance()->GetEYSD();
+    return APC_SetModuleSyncTimingCountEnable(pEYSDI, m_deviceSelInfo[INDEX_COLOR_PATH1], true);
+}
+
+int CVideoDeviceModel_80363::SetModuleSyncForceSync(bool bEnable)
+{
+    void *pEYSDI = CEYSDDeviceManager::GetInstance()->GetEYSD();
+    return APC_SetModuleSyncForceSync(pEYSDI, m_deviceSelInfo[INDEX_COLOR_PATH1], bEnable);
+}
+
+int CVideoDeviceModel_80363::SetModuleSyncTimingCount(bool bEnable)
+{
+    void *pEYSDI = CEYSDDeviceManager::GetInstance()->GetEYSD();
+    return APC_SetModuleSyncTimingCountEnable(pEYSDI, m_deviceSelInfo[INDEX_COLOR_PATH1], bEnable);
 }
 
 int CVideoDeviceModel_80363::SetDepthDataType(int nDepthDataType){
@@ -380,27 +429,45 @@ int CVideoDeviceModel_80363::AdjustZDTableByPointCloudInfo(PointCloudInfo& info)
 
         int nZNear, nZFar;
         m_pVideoDeviceController->GetPreviewOptions()->GetZRange(nZNear, nZFar);
-        if (m_zdTableInfo.nZNear == USHRT_MAX /* Cannot parse out valid nZNear regard it as not calibrated */) {
-            m_zdTableInfo.nZNear = 0;
-            m_zdTableInfo.nZFar = 1000;
-            m_pVideoDeviceController->GetPreviewOptions()->SetZRange(m_zdTableInfo.nZNear, nZFar);
+        qDebug("[80363] AdjustZDTableByPointCloudInfo: START - Current PreviewOptions ZRange: %d, %d | Parsed from ZDTable: %d, %d | m_bIsFirstStream=%d",
+               nZNear, nZFar, m_zdTableInfo.nZNear, m_zdTableInfo.nZFar, m_bIsFirstStream);
+
+        // First stream (first launch): Apply ColorPaletteConfig with priority
+        // Subsequent streams (mode changes): Preserve user-set Z range, don't modify
+        if (m_bIsFirstStream) {
+            bool bNoCalibration = (m_zdTableInfo.nZNear == USHRT_MAX);
+
+            if (bNoCalibration) {
+                qDebug("[80363] AdjustZDTableByPointCloudInfo: FIRST STREAM - NO CALIBRATION detected");
+                // Use defaults for ColorPaletteConfig when no calibration data
+                m_zdTableInfo.nZNear = 0;
+                m_zdTableInfo.nZFar = 1000;
+            }
+
+            // Apply ColorPaletteConfig (will use provided values or its own defaults)
+            int configuredZNear, configuredZFar;
+            ColorPaletteConfig::GetInstance()->ApplyConfig(
+                "80363",
+                m_zdTableInfo.nZNear,
+                nZFar,
+                configuredZNear,
+                configuredZFar
+            );
+
+            m_pVideoDeviceController->GetPreviewOptions()->SetZRange(configuredZNear, configuredZFar);
             m_pVideoDeviceController->AdjustZRange();
-            return APC_NO_CALIBRATION_LOG;
+            m_pVideoDeviceController->GetPreviewOptions()->SetDefaultZRange(configuredZNear, configuredZFar);
+            m_bIsFirstStream = false;
+
+            if (bNoCalibration) {
+                return APC_NO_CALIBRATION_LOG;
+            }
+        } else {
+            // Subsequent streams (mode changes): Respect user adjustments
+            qDebug("[80363] AdjustZDTableByPointCloudInfo: SUBSEQUENT STREAM - Preserving user ZRange (not applying config): ParsedFromZDTable=%d,%d | PreviewOptions=%d,%d",
+                   m_zdTableInfo.nZNear, m_zdTableInfo.nZFar, nZNear, nZFar);
+            // Do nothing - keep current PreviewOptions values
         }
-
-        // Apply ColorPaletteConfig overrides for 80363 device
-        int configuredZNear, configuredZFar;
-        ColorPaletteConfig::GetInstance()->ApplyConfig(
-            "80363",        // Device model
-            m_zdTableInfo.nZNear,      // ZDTable calculated zNear
-            nZFar,                     // Current zFar (default 1000)
-            configuredZNear,        // Output: final zNear
-            configuredZFar          // Output: final zFar
-        );
-
-        m_pVideoDeviceController->GetPreviewOptions()->SetZRange(configuredZNear, configuredZFar);
-        m_pVideoDeviceController->AdjustZRange();
-        m_pVideoDeviceController->GetPreviewOptions()->SetDefaultZRange(configuredZNear, configuredZFar);
     }
 
     return APC_OK;
@@ -489,7 +556,16 @@ int CVideoDeviceModel_80363::GetImage(STREAM_TYPE type) {
 }
 
 int CVideoDeviceModel_80363::ProcessImage(STREAM_TYPE streamType, int nImageSize, int nSerialNumber) {
-    return ProcessImageCallback(streamType, nImageSize, nSerialNumber);;
+    if (m_pVideoDeviceController &&
+        m_pVideoDeviceController->GetPreviewOptions() &&
+        m_pVideoDeviceController->GetPreviewOptions()->IsModuleSync() &&
+        !IsInterleaveMode()) {
+        int fps = m_pVideoDeviceController->GetPreviewOptions()->GetStreamFPS(streamType);
+        if (fps > 0) {
+            nSerialNumber = TimingCountToFrameCount(nSerialNumber, fps);
+        }
+    }
+    return ProcessImageCallback(streamType, nImageSize, nSerialNumber);
 }
 
 /**
@@ -544,6 +620,12 @@ int CVideoDeviceModel_80363::SetIRValue(unsigned short nValue)
 int CVideoDeviceModel_80363::StopStreaming(bool bRestart) {
     ChangeState(OPENED);
 
+    // MCS: Do NOT reset FW registers (bit[0], bit[1]) on stop.
+    // Let FW state persist so it stays in sync with UI checkboxes.
+    // Only reset the one-shot "force sync fired" flag so Master checkbox
+    // becomes clickable again on next preview session.
+    m_pVideoDeviceController->GetPreviewOptions()->SetModuleSyncMaster(false);
+
     if (m_pVideoDeviceController->GetPreviewOptions()->IsIMUSyncWithFrame()) {
         m_pVideoDeviceController->StopIMUSyncWithFrame();
     }
@@ -572,7 +654,7 @@ int CVideoDeviceModel_80363::StopStreamingTask() {
     if (InterleaveModeSupport()) {
         if (IsInterleaveMode()) {
             m_bIsInterleaveStreamStarting = false;
-            
+
             // Re-enable all camera properties that were disabled during interleave mode
             // by restoring their valid state to true
             m_cameraPropertyModel[0]->SetCameraPropertyValid(CCameraPropertyModel::LOW_LIGHT_COMPENSATION, true);
@@ -580,10 +662,11 @@ int CVideoDeviceModel_80363::StopStreamingTask() {
             m_cameraPropertyModel[0]->SetCameraPropertyValid(CCameraPropertyModel::WHITE_BLANCE_TEMPERATURE, true);
             m_cameraPropertyModel[0]->SetCameraPropertyValid(CCameraPropertyModel::AUTO_EXPOSURE, true);
             m_cameraPropertyModel[0]->SetCameraPropertyValid(CCameraPropertyModel::EXPOSURE_TIME, true);
-            
+            m_cameraPropertyModel[0]->SetCameraPropertyValid(CCameraPropertyModel::LIGHT_SOURCE, true);
+
             // Restore the previous value
             m_cameraPropertyModel[0]->SetCameraPropertyValue(CCameraPropertyModel::LOW_LIGHT_COMPENSATION, m_bPrevLowLightValue);
-            
+
             SetInterleaveModeEnable(false);
         }
     }
@@ -597,8 +680,6 @@ int CVideoDeviceModel_80363::ExtendIR(bool bEnable)
 {
     int ret;
     void *pEYSDI = CEYSDDeviceManager::GetInstance()->GetEYSD();
-    static constexpr uint16_t kDefaultIRMax = 6;
-    static constexpr uint16_t kExtendIRMax = 15;
 
     bool bDisableIR = (0 == m_nIRValue);
     if (bDisableIR) {
@@ -608,7 +689,7 @@ int CVideoDeviceModel_80363::ExtendIR(bool bEnable)
     RETRY_APC_API(ret, APC_SetIRMaxValue(pEYSDI, m_deviceSelInfo[INDEX_MONO_PATH], bEnable ? kExtendIRMax : kDefaultIRMax));
 
     if (bDisableIR) {
-        RETRY_APC_API(ret, APC_SetIRMode(pEYSDI, m_deviceSelInfo[INDEX_MONO_PATH], 0x00);); // turn off ir
+        RETRY_APC_API(ret, APC_SetIRMode(pEYSDI, m_deviceSelInfo[INDEX_MONO_PATH], 0x00)); // turn off ir
     }
 
     if (ret != APC_OK) return ret;
@@ -648,8 +729,22 @@ int CVideoDeviceModel_80363::SetInterleaveModeEnable(bool bEnable) {
 
 int CVideoDeviceModel_80363::PrepareOpenDevice()
 {
+    // YX80363: Initialize firmware register 0xE2 (IR max) to 12
+    // (firmware default is 6, but we want 12 as our base state for extended IR feature)
+    void *pEYSDI = CEYSDDeviceManager::GetInstance()->GetEYSD();
+    if (pEYSDI) {
+        int ret = APC_OK;
+        RETRY_APC_API(ret, APC_SetIRMaxValue(pEYSDI, m_deviceSelInfo[INDEX_MONO_PATH], kDefaultIRMax));
+        if (ret != APC_OK) {
+            qDebug("[80363] Warning: Failed to set FW register 0xE2, ret=%d", ret);
+        }
+    }
 
     SetIRValue(m_pVideoDeviceController->GetPreviewOptions()->GetIRLevel());
+
+    // Re-apply MCS timing count from UI after device reopen (FW register resets on CloseDevice)
+    SetModuleSyncTimingCount(m_pVideoDeviceController->GetPreviewOptions()->IsModuleSync());
+
 
     if (InterleaveModeSupport() &&
         APC_OK != SetInterleaveModeEnable(IsInterleaveMode())) {
@@ -824,11 +919,19 @@ int CVideoDeviceModel_80363::AddCameraPropertyModels() {
 
 APCImageType::Value CVideoDeviceModel_80363::ESP936VideoModeToImageType(unsigned short dataType) {
     switch (dataType) {
+        // Legacy video modes for FW001 (0x18-0x1B)
         case 0x1a /* Similar to eSP876 APC_DEPTH_DATA_11_BITS */:
         case 0x18 /* Similar to eSP876 APC_DEPTH_DATA_ILM_11_BITS */:
+        // New video modes for YX80363 (0x48, 0x4A)
+        case 0x48 /* D11 Interleave */:
+        case 0x4A /* D11 Non-Interleave */:
             return APCImageType::DEPTH_11BITS;
+        // Legacy video modes for FW001 (0x19, 0x1B)
         case 0x1b /* Similar to eSP876 APC_DEPTH_DATA_14_BITS */:
         case 0x19 /* Similar to eSP876 APC_DEPTH_DATA_ILM_14_BITS */:
+        // New video modes for YX80363 (0x49, 0x4B)
+        case 0x49 /* D14 Interleave */:
+        case 0x4B /* D14 Non-Interleave */:
             return APCImageType::DEPTH_14BITS;
         case 0x0:
             return APCImageType::COLOR_YUY2;
@@ -938,4 +1041,11 @@ CVideoDeviceModel_80363::ProcessFrameGrabberCallback(vector<unsigned char> &bufD
 
 int CVideoDeviceModel_80363::UpdateZDTable() {
     return APC_OK;
+}
+
+/**
+ * Override for eSP936 (80363): calibration data is stored on color path 1.
+ */
+int CVideoDeviceModel_80363::CopyG1FileToG2(int fileIndex) {
+    return CopyG1FileToG2WithDevSelInfo(fileIndex, m_deviceSelInfo[INDEX_COLOR_PATH1]);
 }

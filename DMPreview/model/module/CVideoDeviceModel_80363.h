@@ -7,6 +7,8 @@ public:
     static constexpr unsigned char INDEX_COLOR_PATH0 = 0;
     static constexpr unsigned char INDEX_COLOR_PATH1 = 1;
     static constexpr unsigned char INDEX_MONO_PATH   = 2;
+    static constexpr uint16_t kDefaultIRMax = 12;
+    static constexpr uint16_t kExtendIRMax = 15;
     static APCImageType::Value ESP936VideoModeToImageType(unsigned short dataType);
     virtual bool IsStreamAvailable();
     virtual int AddCameraPropertyModels();
@@ -50,6 +52,12 @@ public:
     virtual bool IsStreamSupport(STREAM_TYPE type);
     virtual int StopStreaming(bool bRestart);
 
+    virtual bool ModuleSyncSupport() override;
+    virtual int  ModuleSync() override;
+    virtual bool GetModuleSyncMasterCapability() override;
+    virtual int  SetModuleSyncForceSync(bool bEnable) override;
+    virtual int  SetModuleSyncTimingCount(bool bEnable) override;
+
     virtual bool InterleaveModeSupport();
     virtual bool IsInterleaveMode();
     virtual int SetInterleaveModeEnable(bool bEnable);
@@ -57,6 +65,7 @@ public:
     virtual ImageData& GetDepthImageData();
     virtual bool IsESP936Series();
     virtual APCImageType::Value GetDepthImageType();
+    std::vector<STREAM_TYPE> GetDepthAccuracyStreamTypes() override;
     virtual bool IsCurrentModeDepthOnly();
     bool IsRectifyData() override;
     int ProcessImage(STREAM_TYPE streamType, int nImageSize, int nSerialNumber) override;
@@ -68,6 +77,7 @@ public:
 
     int StopStreamingTask() override;
     virtual bool IsAETargetSupport() override { return false; }
+    virtual int CopyG1FileToG2(int fileIndex) override;
 
 protected:
     CVideoDeviceModel_80363(DEVSELINFO *pDeviceSelfInfo);
@@ -80,6 +90,12 @@ private:
     void UpdateImageProcessor();
     int AdjustZDTableByPointCloudInfo(PointCloudInfo &info);
     bool m_bIsInterleaveStreamStarting;
+    bool m_bIsFirstStream = true;
+
+    static inline int TimingCountToFrameCount(int timingCountUs, int fps) {
+        uint64_t us = static_cast<uint64_t>(timingCountUs & 0x7FFFFFFF);
+        return static_cast<int>((us * fps + 500000) / 1000000);
+    }
 };
 
 #endif // CVIDEODEVICEMODEL_80363_H

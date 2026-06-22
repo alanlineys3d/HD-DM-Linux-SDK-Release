@@ -170,6 +170,8 @@ var searchData=
   ['apc_5fsetirmode',['APC_SetIRMode',['../e_s_p_d_i_8h.html#a6819134345501baaade968e59234a57f',1,'eSPDI.h']]],
   ['apc_5fsetlogdata',['APC_SetLogData',['../e_s_p_d_i_8h.html#a33e62e35695987eecf14c5293ae76195',1,'eSPDI.h']]],
   ['apc_5fsetlogdata_5fadvanced',['APC_SetLogData_Advanced',['../e_s_p_d_i_8h.html#aa59d61c434dd9f195a4852f74589faac',1,'eSPDI.h']]],
+  ['apc_5fsetmodulesyncforcesync',['APC_SetModuleSyncForceSync',['../e_s_p_d_i_8h.html#aa9808693c35d0ec8eb9e10dfb18fd182',1,'eSPDI.h']]],
+  ['apc_5fsetmodulesynctimingcountenable',['APC_SetModuleSyncTimingCountEnable',['../e_s_p_d_i_8h.html#a2e18576324807aa80139220799383cc9',1,'eSPDI.h']]],
   ['apc_5fsetmultibyteshwregister',['APC_SetMultiBytesHWRegister',['../e_s_p_d_i_8h.html#a0722345ea3e43ec7f54c7d4b701b3144',1,'eSPDI.h']]],
   ['apc_5fsetpidvid',['APC_SetPidVid',['../e_s_p_d_i_8h.html#acb665df80c6fe114534d3a391df777fb',1,'eSPDI.h']]],
   ['apc_5fsetpupropval',['APC_SetPUPropVal',['../e_s_p_d_i_8h.html#adadcec3c539bcd213a7501a03548c6b7',1,'eSPDI.h']]],

@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <stdint.h>
 #include <vector>
+#include <map>
 #include <math.h>
 #include <thread>
 #include <cstring>
@@ -780,6 +781,7 @@ int main(void)
         printf("109. 80363 eSP936 save file test.\n");
         printf("110. Allocate user pointers to get frames without memcpy.\n");
         printf("111. Allocate user pointers with color and depth images.\n");
+        printf("112. Test multiple device capability\n");
         printf("255. EXIT)\n");
         scanf("%d", &input);
         switch (input) {
@@ -3918,11 +3920,116 @@ int main(void)
             printf("=== Case 111 completed ===\n");
             return 0;
         }
+        case 112: {
+            // Enumerate all devices via APC_GetDeviceInfoEx, group by wUsbNode to
+            // verify that devices belonging to the same physical module share one
+            // wUsbNode, and different modules get different wUsbNode values.
+            //
+            // Expected device counts per module type:
+            //   80363 (composite): 1 device  (PID 0x0202, single composite USB device)
+            //   PUMA  (composite): 1 device  (single composite USB device)
+            //
+            // PASS/FAIL requires two or more modules inserted.
+            // With a single module, this case reports device info for manual inspection.
+            printf("=== Case 112: wUsbNode Device Grouping ===\n");
+
+            void* cameraHandle = nullptr;
+            int ret = APC_Init(&cameraHandle, false);
+            if (!cameraHandle) {
+                fprintf(stderr, "APC_Init failed, reason %d\n", ret);
+                return 0;
+            }
+
+            int nDevCount = APC_GetDeviceNumber(cameraHandle);
+            printf("Device count: %d\n", nDevCount);
+
+            if (nDevCount == 0) {
+                printf("No devices found.\n");
+                APC_Release(&cameraHandle);
+                return 0;
+            }
+
+            DEVSELINFO devSelInfo;
+            DEVINFORMATIONEX infoEX;
+
+            // Collect device info
+            struct DevEntry {
+                int index;
+                unsigned short wPID;
+                unsigned short wVID;
+                unsigned short wUsbNode;
+                char strDevName[512];
+                char strDevPath[512];
+            };
+            std::vector<DevEntry> devices;
+
+            for (int i = 0; i < nDevCount; i++) {
+                devSelInfo.index = i;
+                memset(&infoEX, 0, sizeof(infoEX));
+                ret = APC_GetDeviceInfoEx(cameraHandle, &devSelInfo, &infoEX);
+                if (ret != APC_OK) {
+                    printf("[%d] APC_GetDeviceInfoEx failed, ret=%d\n", i, ret);
+                    continue;
+                }
+                DevEntry entry;
+                entry.index = i;
+                entry.wPID = infoEX.wPID;
+                entry.wVID = infoEX.wVID;
+                entry.wUsbNode = infoEX.wUsbNode;
+                strncpy(entry.strDevName, infoEX.strDevName, sizeof(entry.strDevName));
+                strncpy(entry.strDevPath, infoEX.strDevPath, sizeof(entry.strDevPath));
+                devices.push_back(entry);
+            }
+
+            // Group by wUsbNode
+            std::map<unsigned short, std::vector<int>> nodeGroups;
+            for (int i = 0; i < (int)devices.size(); i++) {
+                nodeGroups[devices[i].wUsbNode].push_back(i);
+            }
+
+            // Print grouped output
+            int groupIdx = 0;
+            for (auto& kv : nodeGroups) {
+                printf("\n--- Module %d (wUsbNode=0x%04X, %d device%s) ---\n",
+                       groupIdx, kv.first, (int)kv.second.size(),
+                       kv.second.size() > 1 ? "s" : "");
+                printf("  %-6s %-10s %-10s %-40s\n",
+                       "Index", "PID", "VID", "DevPath");
+                for (int idx : kv.second) {
+                    printf("  %-6d 0x%04X     0x%04X     %s\n",
+                           devices[idx].index, devices[idx].wPID,
+                           devices[idx].wVID, devices[idx].strDevPath);
+                }
+                groupIdx++;
+            }
+
+            // Verdict
+            int uniqueModules = (int)nodeGroups.size();
+            printf("\n--- Result: %d module%s detected from %d device%s ---\n",
+                   uniqueModules, uniqueModules > 1 ? "s" : "",
+                   (int)devices.size(), devices.size() > 1 ? "s" : "");
+
+            if (uniqueModules >= 2) {
+                printf("PASS: %d modules have distinct wUsbNode values.\n", uniqueModules);
+            } else if (uniqueModules == 1 && nDevCount >= 2) {
+                printf("FAIL: All %d devices share wUsbNode=0x%04X.\n",
+                       nDevCount, devices[0].wUsbNode);
+                printf("      ParsePortNumber cannot differentiate modules.\n");
+            } else {
+                printf("INFO: Single module with %d device%s. "
+                       "Insert two modules to test differentiation.\n",
+                       (int)devices.size(), devices.size() > 1 ? "s" : "");
+            }
+
+            APC_Release(&cameraHandle);
+            printf("=== Case 112 completed ===\n");
+            return 0;
+        }
         case 255:
             close_device();
             release_device();
             return 0;
-            break; 
+            break;
         default:
             continue;
         }
@@ -9445,12 +9552,12 @@ static void case108_esp936_stress_test(void) {
     scanf("%d", &dh);
     printf("Choose FPS:\n");
     scanf("%d", &fps);
-    printf("Choose Depth type D11/Color Only Rectified=24 Z14=25 Color Only=0 Interleave D11=26 Z14=27:\n");
+    printf("Choose Depth type D11/Color Only Rectified=72 Z14=73 Color Only=0 Interleave D11=74 Z14=75:\n");
     scanf("%d", &depthDataType);
     printf("Saving file in out_img:\n");
     scanf("%d", &isSavingFile);
 
-    isInterleave = depthDataType == 26 || depthDataType == 27;
+    isInterleave = depthDataType == 26 || depthDataType == 27 || depthDataType == 74 || depthDataType == 75;
     std::size_t runCount = 0;
 
     while (runCount < run) {

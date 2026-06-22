@@ -311,10 +311,15 @@ public:
     
     bool IsRunning() const { return m_isRunning.load(); }
 
-    void Reset() { 
+    void Reset() {
         std::lock_guard<std::mutex> lock(m_CompensatorMutex);
-        m_Reset = true; 
+        m_Reset = true;
     }
+
+    /**
+     * Whether the current device supports SelfCalibration2 (thermal sensor whitelist).
+     */
+    bool IsSupported() const;
 
 signals:
     void statusTextChanged(const QString &text);

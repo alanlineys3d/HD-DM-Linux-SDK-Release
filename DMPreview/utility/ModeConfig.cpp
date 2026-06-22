@@ -12,6 +12,7 @@
 #define PID_SUPPORT_TABLE_COLUMN_v1     12
 #define PID_SUPPORT_TABLE_COLUMN_v2     15
 #define PID_TABLE_COLUMN_GRAPE          24
+#define PID_TABLE_COLUMN_GRAPE_V2       26  // Grape v2 with Video_Mode_D11_ColorOnly and Video_Mode_Z14
 
 #define PID_TABLE_IDX_MODE              0
 #define PID_TABLE_IDX_MODE_DESC         1
@@ -41,6 +42,9 @@
 #define PID_TABLE_IDX_L_INDEX           21
 #define PID_TABLE_IDX_K_INDEX           22
 #define PID_TABLE_IDX_T_INDEX           23
+// Grape v2 table added (replace K_VideoMode functionality)
+#define PID_TABLE_IDX_GRAPE_VIDEO_MODE_D11_OR_COLOR_ONLY  24
+#define PID_TABLE_IDX_GRAPE_VIDEO_MODE_Z14                25
 
 ModeConfig& g_ModeConfig = ModeConfig::GetModeConfig();
 
@@ -82,6 +86,7 @@ bool ModeConfig::IsSupportedColumnNumber(int counts) {
         case PID_SUPPORT_TABLE_COLUMN_v1:
         case PID_SUPPORT_TABLE_COLUMN_v2:
         case PID_TABLE_COLUMN_GRAPE:
+        case PID_TABLE_COLUMN_GRAPE_V2:
             return true;
         default:
             return false;
@@ -208,7 +213,7 @@ void ModeConfig::ReadModeConfig()
             {
                 xModeConfig.iInterLeaveModeFPS = sqlite3_column_int(stmt, PID_TABLE_IDX_INTER_LEAVE_MODE );
             }
-            if (Table.first == APC_PID_GRAPE)
+            if (Table.first == APC_PID_GRAPE || Table.first == APC_PID_80363IR || Table.first == APC_PID_80363C)
             {
                 // start - used by grape
                 if (SQLITE_INTEGER == sqlite3_column_type(stmt, PID_TABLE_IDX_L_DATA_TYPE))
@@ -264,6 +269,15 @@ void ModeConfig::ReadModeConfig()
                     std::stringstream ssDepthIndex((char*)sqlite3_column_text(stmt, PID_TABLE_IDX_T_INDEX));
                     for (std::string each; std::getline(ssDepthIndex, each, ',');
                          xModeConfig.iT_Index.push_back(atoi(each.c_str())));
+                }
+                // Grape v2 table: read Video_Mode_D11_ColorOnly and Video_Mode_Z14 (replaces K_VideoMode)
+                if (columnCounts >= PID_TABLE_COLUMN_GRAPE_V2 && SQLITE_INTEGER == sqlite3_column_type(stmt, PID_TABLE_IDX_GRAPE_VIDEO_MODE_D11_OR_COLOR_ONLY))
+                {
+                    xModeConfig.videoModeD11OrColorOnly = sqlite3_column_int(stmt, PID_TABLE_IDX_GRAPE_VIDEO_MODE_D11_OR_COLOR_ONLY);
+                }
+                if (columnCounts >= PID_TABLE_COLUMN_GRAPE_V2 && SQLITE_INTEGER == sqlite3_column_type(stmt, PID_TABLE_IDX_GRAPE_VIDEO_MODE_Z14))
+                {
+                    xModeConfig.videoModeZ14 = sqlite3_column_int(stmt, PID_TABLE_IDX_GRAPE_VIDEO_MODE_Z14);
                 }
                 // end - used by grape
             }

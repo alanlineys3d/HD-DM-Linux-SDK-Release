@@ -589,6 +589,20 @@ void CSelfCalibration2Controller::SetMode(Mode mode) {
     }
 }
 
+bool CSelfCalibration2Controller::IsSupported() const {
+    if (!m_pVideoDeviceModel) return false;
+    auto deviceInfo = m_pVideoDeviceModel->GetDeviceInformation();
+    if (deviceInfo.empty()) return false;
+    switch (deviceInfo[0].deviceInfomation.wPID) {
+        case APC_PID_80362:
+        case APC_PID_IRIS:
+        case APC_PID_IVY2:
+            return true;
+        default:
+            return false;
+    }
+}
+
 void CSelfCalibration2Controller::SetCurrentSensorTemperature(float temperature) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_currentTemperature = temperature;

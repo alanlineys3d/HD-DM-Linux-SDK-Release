@@ -24,31 +24,16 @@ void ColorPaletteGenerator::generatePalette(unsigned char *palette, int paletteS
 
 
 void ColorPaletteGenerator::generatePalette(unsigned char *palette, int paletteSize, int controlPoint1, float controlPoint1Value, int controlPoint2, float controlPoint2Value, bool reverseRedToBlue) {
-		
-    double R, G, B;
-    double step = 0;
 
-    if(controlPoint1 > controlPoint2)
+    double R, G, B;
+
+    if (controlPoint1 > controlPoint2)
         controlPoint1 = controlPoint2;
 
+    int count = controlPoint1;
+    double step = (controlPoint2Value - controlPoint1Value) / (double)(controlPoint2 - controlPoint1);
 
-    step = (controlPoint1Value - 0.0f) / (float)(controlPoint1 - 0);
-
-
-
-    int count = 0;
-    for (int i = 0; i < controlPoint1; i++) {
-        getRGB(step * i, R, G, B, reverseRedToBlue);
-        palette[count*4 + 0] = (unsigned char)R;
-        palette[count*4 + 1] = (unsigned char)G;
-        palette[count*4 + 2] = (unsigned char)B;
-        palette[count*4 + 3] = (unsigned char)defaultAlpha;
-        count++;
-    }
-
-    step = (controlPoint2Value - controlPoint1Value) / (double)(controlPoint2 - controlPoint1);
-
-    for (int i = 0; i< controlPoint2 - controlPoint1; i++) {
+    for (int i = 0; i < controlPoint2 - controlPoint1; i++) {
         getRGB(step * i + controlPoint1Value, R, G, B, reverseRedToBlue);
         palette[count * 4 + 0] = (unsigned char)R;
         palette[count * 4 + 1] = (unsigned char)G;
@@ -56,25 +41,6 @@ void ColorPaletteGenerator::generatePalette(unsigned char *palette, int paletteS
         palette[count * 4 + 3] = (unsigned char)defaultAlpha;
         count++;
     }
-
-    step = (1.0f - controlPoint2Value) / (double)(paletteSize - controlPoint2);
-    for (int i = 0; i < paletteSize - controlPoint2; i++) {
-        getRGB(step * i + controlPoint2Value, R, G, B, reverseRedToBlue);
-        palette[count * 4 + 0] = (unsigned char)R;
-        palette[count * 4 + 1] = (unsigned char)G;
-        palette[count * 4 + 2] = (unsigned char)B;
-        palette[count * 4 + 3] = (unsigned char)defaultAlpha;
-        count++;
-    }
-
-    palette[0] = 0;
-    palette[1] = 0;
-    palette[2] = 0;
-    palette[3] = (unsigned char)defaultAlpha;
-    //palette[(paletteSize - 1)*4 + 0] = 255;
-    //palette[(paletteSize - 1)*4 + 1] = 255;
-    //palette[(paletteSize - 1)*4 + 2] = 255;
-    //palette[(paletteSize - 1)*4 + 3] = (unsigned char)defaultAlpha;
 }
 
 void ColorPaletteGenerator::generatePaletteColor(RGBQUAD* palette, int size, int mode, int customROI1, int customROI2, bool reverseRedToBlue) {
@@ -85,8 +51,7 @@ void ColorPaletteGenerator::generatePaletteColor(RGBQUAD* palette, int size, int
     double ROI2Value = 1.0f;
     double ROI1Value = 0.0f;
 
-    unsigned char* buf = (unsigned char*)malloc(4 * size);
-    //unsigned char buf[(size) * 4];
+    unsigned char* buf = (unsigned char*)calloc(size, 4);
     //Set ROI by mode setting.The bigger the disparity the nearer the distance
     switch (mode) {
     case 1: //near
@@ -146,7 +111,7 @@ void ColorPaletteGenerator::generatePaletteGray(RGBQUAD* palette, int size, int 
     float ROI2Value = 1.0f;
 
 
-    unsigned char* buf = (unsigned char*)malloc(sizeof(unsigned char) * 4 * size);
+    unsigned char* buf = (unsigned char*)calloc(size, 4);
     //unsigned char buf[(size) * 4];
     //Set ROI by mode setting.The bigger the disparity the nearer the distance
     switch (mode) {
@@ -198,21 +163,10 @@ void ColorPaletteGenerator::generatePaletteGray(unsigned char * palette, int pal
 }
 
 void ColorPaletteGenerator::generatePaletteGray(unsigned char * palette, int paletteSize, int controlPoint1, float controlPoint1Value, int controlPoint2, float controlPoint2Value, bool reverseGraylevel) {
-    float step;
-    step = (controlPoint1Value - 0.0f) / (float)(controlPoint1 - 0);
+    int count = controlPoint1;
+    float step = (controlPoint2Value - controlPoint1Value) / (float)(controlPoint2 - controlPoint1);
 
-    int count = 0;
-    for (int i = 0; i < controlPoint1; i++) {
-        int grayValue = 255 * (reverseGraylevel ? 1.0f - (step * i) : (step * i));
-        palette[count * 4 + 0] = (unsigned char)grayValue;
-        palette[count * 4 + 1] = (unsigned char)grayValue;
-        palette[count * 4 + 2] = (unsigned char)grayValue;
-        palette[count * 4 + 3] = (unsigned char)defaultAlpha;
-        count++;
-    }
-
-    step = (controlPoint2Value - controlPoint1Value) / (float)(controlPoint2 - controlPoint1);
-    for (int i = 0; i< controlPoint2 - controlPoint1; i++) {
+    for (int i = 0; i < controlPoint2 - controlPoint1; i++) {
         int grayValue = 255 * (reverseGraylevel ? 1.0f - ((step * i + controlPoint1Value)) : ((step * i + controlPoint1Value)));
         palette[count * 4 + 0] = (unsigned char)grayValue;
         palette[count * 4 + 1] = (unsigned char)grayValue;
@@ -220,25 +174,6 @@ void ColorPaletteGenerator::generatePaletteGray(unsigned char * palette, int pal
         palette[count * 4 + 3] = (unsigned char)defaultAlpha;
         count++;
     }
-
-    step = (1.0f - controlPoint2Value) / (float)(paletteSize - controlPoint2);
-    for (int i = 0; i < paletteSize - controlPoint2; i++) {
-        int grayValue = 255 * (reverseGraylevel ? 1.0f - ((step * i + controlPoint2Value)) : ((step * i + controlPoint2Value)));
-        palette[count * 4 + 0] = (unsigned char)grayValue;
-        palette[count * 4 + 1] = (unsigned char)grayValue;
-        palette[count * 4 + 2] = (unsigned char)grayValue;
-        palette[count * 4 + 3] = (unsigned char)defaultAlpha;
-        count++;
-    }
-
-    palette[0] = 0;
-    palette[1] = 0;
-    palette[2] = 0;
-    palette[3] = (unsigned char)defaultAlpha;
-    //palette[(paletteSize - 1)*4 + 0] = 255;
-    //palette[(paletteSize - 1)*4 + 1] = 255;
-    //palette[(paletteSize - 1)*4 + 2] = 255;
-    //palette[(paletteSize - 1)*4 + 3] = (unsigned char)defaultAlpha;
 }
 
 void ColorPaletteGenerator::getRGB(double value, double &R, double &G, double &B, bool reverseRedToBlue) {
@@ -321,7 +256,7 @@ void ColorPaletteGenerator::HSV_to_RGB(double H, double S, double V, double &R, 
             R = nMin;
             G = ((4.0 - H)*fDet + R);
         }
-        else if (H <= 4.49) { //B>=R>=G, H=4+(R-G)/fDet
+        else if (H <= 4.5) { //B>=R>=G, H=4+(R-G)/fDet
             B = nMax;
             G = nMin;
             R = ((H - 4.0)*fDet + G);
